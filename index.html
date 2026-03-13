@@ -1,0 +1,1696 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cuestionario APA</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  min-height: 100vh; padding: 20px; color: #333;
+}
+.container { max-width: 700px; margin: 0 auto; }
+.header { text-align: center; color: #fff; padding: 30px 20px; }
+.header h1 { font-size: 28px; font-weight: 700; margin-bottom: 8px; text-shadow: 0 2px 10px rgba(0,0,0,0.2); }
+.header .meta { font-size: 14px; opacity: 0.9; }
+.progress-bar { background: rgba(255,255,255,0.3); border-radius: 10px; height: 8px; margin: 20px 0; overflow: hidden; }
+.progress-fill { background: #fff; height: 100%; width: 0%; transition: width 0.4s ease; border-radius: 10px; }
+.question { background: #fff; border-radius: 16px; padding: 30px; box-shadow: 0 10px 40px rgba(0,0,0,0.15); display: none; }
+.question.active { display: block; }
+.q-header { display: flex; justify-content: space-between; margin-bottom: 20px; font-size: 13px; color: #888; }
+.q-number { font-weight: 600; color: #667eea; }
+.q-text { font-size: 18px; font-weight: 600; line-height: 1.5; margin-bottom: 25px; color: #222; }
+.options { display: flex; flex-direction: column; gap: 12px; }
+.option-wrapper { display: flex; flex-direction: column; }
+.option {
+  display: flex; align-items: flex-start; gap: 14px; padding: 16px 18px;
+  border: 2px solid #e8e8e8; border-radius: 12px; background: #fafafa;
+  cursor: pointer; transition: all 0.2s; text-align: left; font-size: 15px; width: 100%;
+}
+[dir="rtl"] .option { text-align: right; flex-direction: row-reverse; }
+.option:hover:not(.disabled) { border-color: #667eea; background: #f5f3ff; }
+.option.selected { border-color: #667eea; background: #ede9fe; }
+.option.correct { border-color: #22c55e; background: #dcfce7; }
+.option.incorrect { border-color: #ef4444; background: #fee2e2; }
+.option.disabled { cursor: default; }
+.option.show-correct { border-color: #22c55e; background: #dcfce7; }
+.opt-label {
+  display: flex; align-items: center; justify-content: center;
+  width: 32px; height: 32px; border-radius: 50%; background: #e8e8e8;
+  font-weight: 700; font-size: 14px; flex-shrink: 0;
+}
+.option.selected .opt-label { background: #667eea; color: #fff; }
+.option.correct .opt-label { background: #22c55e; color: #fff; }
+.option.incorrect .opt-label { background: #ef4444; color: #fff; }
+.option.show-correct .opt-label { background: #22c55e; color: #fff; }
+.opt-text { padding-top: 5px; line-height: 1.5; }
+
+/* Individual option feedback */
+.option-feedback {
+  margin: 8px 0 4px 46px;
+  padding: 12px 16px;
+  border-radius: 8px;
+  font-size: 14px;
+  line-height: 1.5;
+}
+[dir="rtl"] .option-feedback { margin-left: 0; margin-right: 46px; }
+.option-feedback.correct-feedback {
+  background: #dcfce7;
+  border-left: 3px solid #22c55e;
+}
+.option-feedback.incorrect-feedback {
+  background: #fef3f2;
+  border-left: 3px solid #fca5a5;
+}
+[dir="rtl"] .option-feedback.correct-feedback,
+[dir="rtl"] .option-feedback.incorrect-feedback {
+  border-left: none;
+  border-right: 3px solid;
+}
+[dir="rtl"] .option-feedback.correct-feedback { border-right-color: #22c55e; }
+[dir="rtl"] .option-feedback.incorrect-feedback { border-right-color: #fca5a5; }
+.feedback-status {
+  font-weight: 600;
+  margin-bottom: 4px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.feedback-status.correct { color: #166534; }
+.feedback-status.incorrect { color: #991b1b; }
+.feedback-rationale { color: #444; }
+
+/* Hint box */
+.hint-box {
+  margin: 12px 0;
+  border-radius: 10px;
+  overflow: hidden;
+  background: #fffbeb;
+  border: 1px solid #fcd34d;
+}
+.hint-toggle {
+  width: 100%;
+  padding: 10px 16px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  color: #92400e;
+  text-align: left;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.hint-toggle:hover { background: #fef3c7; }
+.hint-content {
+  padding: 0 16px;
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.3s, padding 0.3s;
+  font-size: 14px;
+  color: #78350f;
+  line-height: 1.5;
+}
+.hint-box.show .hint-content {
+  padding: 0 16px 12px;
+  max-height: 200px;
+}
+
+.next-btn {
+  margin-top: 20px; width: 100%; padding: 14px;
+  background: linear-gradient(135deg, #667eea, #764ba2); color: #fff; border: none;
+  border-radius: 10px; font-size: 15px; font-weight: 600; cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+.next-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(102,126,234,0.4); }
+.hidden { display: none !important; }
+.results { background: #fff; border-radius: 16px; padding: 40px; text-align: center; box-shadow: 0 10px 40px rgba(0,0,0,0.15); display: none; }
+.results.active { display: block; }
+.results h2 { font-size: 28px; margin-bottom: 10px; color: #333; }
+.results .score { font-size: 64px; font-weight: 700; color: #667eea; margin: 20px 0; }
+.results .score-text { font-size: 18px; color: #666; margin-bottom: 30px; }
+.restart-btn {
+  padding: 14px 40px; background: linear-gradient(135deg, #667eea, #764ba2);
+  color: #fff; border: none; border-radius: 10px; font-size: 15px; font-weight: 600; cursor: pointer;
+}
+
+/* Math CSS */
+.math, .math-block { font-family: "Cambria Math", "Times New Roman", Times, serif; font-style: italic; }
+.math-block { display: block; text-align: center; margin: 10px 0; font-size: 110%; }
+.frac { display: inline-flex; flex-direction: column; align-items: center; vertical-align: middle; margin: 0 3px; font-size: 0.9em; }
+.frac-num { border-bottom: 1px solid currentColor; padding: 0 4px 2px; line-height: 1.2; }
+.frac-den { padding: 2px 4px 0; line-height: 1.2; }
+.sqrt { white-space: nowrap; }
+.sqrt-content { border-top: 1px solid currentColor; padding: 0 3px; margin-left: 2px; }
+sup, sub { font-size: 0.75em; }
+sup { vertical-align: super; }
+sub { vertical-align: sub; }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <h1>Cuestionario APA</h1>
+    <div class="meta">26 questions</div>
+    <div class="progress-bar"><div class="progress-fill"></div></div>
+  </div>
+  <div id="quiz-container">
+        <div class="question" data-index="0">
+          <div class="q-header">
+            <span class="q-number">Question 1</span>
+            <span class="q-of">/ 26</span>
+          </div>
+          <div class="q-text">¿Cuál es el tamaño de fuente recomendado específicamente para la tipografía Times New Roman según la 7ª edición de APA?</div>
+          
+          <div class="options">
+        <div class="option-wrapper">
+          <button class="option" data-label="A" data-correct="true" data-rationale="A diferencia de fuentes modernas como Calibri o Arial que usan 11 pt, Times New Roman mantiene el estándar tradicional de 12 puntos.">
+            <span class="opt-label">A</span>
+            <span class="opt-text">12 pt</span>
+          </button>
+          <div class="option-feedback hidden" data-for="A">
+            <div class="feedback-status"></div>
+            <div class="feedback-rationale">A diferencia de fuentes modernas como Calibri o Arial que usan 11 pt, Times New Roman mantiene el estándar tradicional de 12 puntos.</div>
+          </div>
+        </div>
+      
+        <div class="option-wrapper">
+          <button class="option" data-label="B" data-correct="false" data-rationale="Este tamaño es el estándar para fuentes sin serifa como Calibri y Arial, pero no para Times New Roman.">
+            <span class="opt-label">B</span>
+            <span class="opt-text">11 pt</span>
+          </button>
+          <div class="option-feedback hidden" data-for="B">
+            <div class="feedback-status"></div>
+            <div class="feedback-rationale">Este tamaño es el estándar para fuentes sin serifa como Calibri y Arial, pero no para Times New Roman.</div>
+          </div>
+        </div>
+      
+        <div class="option-wrapper">
+          <button class="option" data-label="C" data-correct="false" data-rationale="Aunque se usaba en notas al pie en ediciones anteriores, la 7ª edición estandariza tamaños mayores para mejorar la legibilidad.">
+            <span class="opt-label">C</span>
+            <span class="opt-text">10 pt</span>
+          </button>
+          <div class="option-feedback hidden" data-for="C">
+            <div class="feedback-status"></div>
+            <div class="feedback-rationale">Aunque se usaba en notas al pie en ediciones anteriores, la 7ª edición estandariza tamaños mayores para mejorar la legibilidad.</div>
+          </div>
+        </div>
+      
+        <div class="option-wrapper">
+          <button class="option" data-label="D" data-correct="false" data-rationale="Este tamaño suele reservarse para títulos grandes en otros estilos, pero APA prioriza un formato más compacto y uniforme.">
+            <span class="opt-label">D</span>
+            <span class="opt-text">14 pt</span>
+          </button>
+          <div class="option-feedback hidden" data-for="D">
+            <div class="feedback-status"></div>
+            <div class="feedback-rationale">Este tamaño suele reservarse para títulos grandes en otros estilos, pero APA prioriza un formato más compacto y uniforme.</div>
+          </div>
+        </div>
+      </div>
+          <button class="next-btn hidden">Next Question →</button>
+        </div>
+      
+        <div class="question" data-index="1">
+          <div class="q-header">
+            <span class="q-number">Question 2</span>
+            <span class="q-of">/ 26</span>
+          </div>
+          <div class="q-text">¿Cómo deben configurarse los márgenes de un documento bajo las normas APA 7?</div>
+          
+          <div class="options">
+        <div class="option-wrapper">
+          <button class="option" data-label="A" data-correct="true" data-rationale="Esta medida equivale a exactamente una pulgada, proporcionando un marco uniforme para el texto.">
+            <span class="opt-label">A</span>
+            <span class="opt-text">2.54 cm en los cuatro lados</span>
+          </button>
+          <div class="option-feedback hidden" data-for="A">
+            <div class="feedback-status"></div>
+            <div class="feedback-rationale">Esta medida equivale a exactamente una pulgada, proporcionando un marco uniforme para el texto.</div>
+          </div>
+        </div>
+      
+        <div class="option-wrapper">
+          <button class="option" data-label="B" data-correct="false" data-rationale="Este formato es común en tesis para encuadernación, pero APA exige simetría absoluta de una pulgada.">
+            <span class="opt-label">B</span>
+            <span class="opt-text">3 cm a la izquierda y 2 cm a la derecha</span>
+          </button>
+          <div class="option-feedback hidden" data-for="B">
+            <div class="feedback-status"></div>
+            <div class="feedback-rationale">Este formato es común en tesis para encuadernación, pero APA exige simetría absoluta de una pulgada.</div>
+          </div>
+        </div>
+      
+        <div class="option-wrapper">
+          <button class="option" data-label="C" data-correct="false" data-rationale="Las normas exigen que el espacio en blanco sea consistente tanto en el eje vertical como en el horizontal.">
+            <span class="opt-label">C</span>
+            <span class="opt-text">2.54 cm solo en los márgenes superior e inferior</span>
+          </button>
+          <div class="option-feedback hidden" data-for="C">
+            <div class="feedback-status"></div>
+            <div class="feedback-rationale">Las normas exigen que el espacio en blanco sea consistente tanto en el eje vertical como en el horizontal.</div>
+          </div>
+        </div>
+      
+        <div class="option-wrapper">
+          <button class="option" data-label="D" data-correct="false" data-rationale="Esta medida corresponde a la sangría de párrafo, no al espacio de los márgenes externos del documento.">
+            <span class="opt-label">D</span>
+            <span class="opt-text">1.27 cm en todos los lados</span>
+          </button>
+          <div class="option-feedback hidden" data-for="D">
+            <div class="feedback-status"></div>
+            <div class="feedback-rationale">Esta medida corresponde a la sangría de párrafo, no al espacio de los márgenes externos del documento.</div>
+          </div>
+        </div>
+      </div>
+          <button class="next-btn hidden">Next Question →</button>
+        </div>
+      
+        <div class="question" data-index="2">
+          <div class="q-header">
+            <span class="q-number">Question 3</span>
+            <span class="q-of">/ 26</span>
+          </div>
+          <div class="q-text">En la lista de referencias, ¿hasta cuántos autores se deben incluir antes de utilizar puntos suspensivos?</div>
+          
+          <div class="options">
+        <div class="option-wrapper">
+          <button class="option" data-label="A" data-correct="true" data-rationale="La 7ª edición amplió este límite para dar mayor crédito a los investigadores en trabajos colaborativos extensos.">
+            <span class="opt-label">A</span>
+            <span class="opt-text">Hasta 20 autores</span>
+          </button>
+          <div class="option-feedback hidden" data-for="A">
+            <div class="feedback-status"></div>
+            <div class="feedback-rationale">La 7ª edición amplió este límite para dar mayor crédito a los investigadores en trabajos colaborativos extensos.</div>
+          </div>
+        </div>
+      
+        <div class="option-wrapper">
+          <button class="option" data-label="B" data-correct="false" data-rationale="Este era el límite establecido en la 6ª edición, el cual fue incrementado significativamente en la versión actual.">
+            <span class="opt-label">B</span>
+            <span class="opt-text">Hasta 7 autores</span>
+          </button>
+          <div class="option-feedback hidden" data-for="B">
+            <div class="feedback-status"></div>
+            <div class="feedback-rationale">Este era el límite establecido en la 6ª edición, el cual fue incrementado significativamente en la versión actual.</div>
+          </div>
+        </div>
+      
+        <div class="option-wrapper">
+          <button class="option" data-label="C" data-correct="false" data-rationale="Aunque es un número redondo, no coincide con la actualización de 2019 que duplicó esa cantidad.">
+            <span class="opt-label">C</span>
+            <span class="opt-text">Hasta 10 autores</span>
+          </button>
+          <div class="option-feedback hidden" data-for="C">
+            <div class="feedback-status"></div>
+            <div class="feedback-rationale">Aunque es un número redondo, no coincide con la actualización de 2019 que duplicó esa cantidad.</div>
+          </div>
+        </div>
+      
+        <div class="option-wrapper">
+          <button class="option" data-label="D" data-correct="false" data-rationale="Existe un límite definido de 20 para evitar listas excesivamente largas que dificulten la lectura del documento.">
+            <span class="opt-label">D</span>
+            <span class="opt-text">No hay límite de autores</span>
+          </button>
+          <div class="option-feedback hidden" data-for="D">
+            <div class="feedback-status"></div>
+            <div class="feedback-rationale">Existe un límite definido de 20 para evitar listas excesivamente largas que dificulten la lectura del documento.</div>
+          </div>
+        </div>
+      </div>
+          <button class="next-btn hidden">Next Question →</button>
+        </div>
+      
+        <div class="question" data-index="3">
+          <div class="q-header">
+            <span class="q-number">Question 4</span>
+            <span class="q-of">/ 26</span>
+          </div>
+          <div class="q-text">¿Cuál es la alineación de texto requerida para el cuerpo de un trabajo académico en APA 7?</div>
+          
+          <div class="options">
+        <div class="option-wrapper">
+          <button class="option" data-label="A" data-correct="true" data-rationale="Se prefiere el margen derecho irregular para facilitar el procesamiento visual y evitar espacios extraños entre palabras.">
+            <span class="opt-label">A</span>
+            <span class="opt-text">Alineado a la izquierda</span>
+          </button>
+          <div class="option-feedback hidden" data-for="A">
+            <div class="feedback-status"></div>
+            <div class="feedback-rationale">Se prefiere el margen derecho irregular para facilitar el procesamiento visual y evitar espacios extraños entre palabras.</div>
+          </div>
+        </div>
+      
+        <div class="option-wrapper">
+          <button class="option" data-label="B" data-correct="false" data-rationale="Aunque parece más 'limpio', el justificado crea espacios desiguales que pueden dificultar la lectura fluida.">
+            <span class="opt-label">B</span>
+            <span class="opt-text">Justificado</span>
+          </button>
+          <div class="option-feedback hidden" data-for="B">
+            <div class="feedback-status"></div>
+            <div class="feedback-rationale">Aunque parece más 'limpio', el justificado crea espacios desiguales que pueden dificultar la lectura fluida.</div>
+          </div>
+        </div>
+      
+        <div class="option-wrapper">
+          <button class="option" data-label="C" data-correct="false" data-rationale="Esta alineación se reserva exclusivamente para ciertos niveles de títulos o elementos de la portada.">
+            <span class="opt-label">C</span>
+            <span class="opt-text">Centrado</span>
+          </button>
+          <div class="option-feedback hidden" data-for="C">
+            <div class="feedback-status"></div>
+            <div class="feedback-rationale">Esta alineación se reserva exclusivamente para ciertos niveles de títulos o elementos de la portada.</div>
+          </div>
+        </div>
+      
+        <div class="option-wrapper">
+          <button class="option" data-label="D" data-correct="false" data-rationale="Esta opción no es estándar en la escritura académica occidental y dificultaría la localización del inicio de cada línea.">
+            <span class="opt-label">D</span>
+            <span class="opt-text">Alineado a la derecha</span>
+          </button>
+          <div class="option-feedback hidden" data-for="D">
+            <div class="feedback-status"></div>
+            <div class="feedback-rationale">Esta opción no es estándar en la escritura académica occidental y dificultaría la localización del inicio de cada línea.</div>
+          </div>
+        </div>
+      </div>
+          <button class="next-btn hidden">Next Question →</button>
+        </div>
+      
+        <div class="question" data-index="4">
+          <div class="q-header">
+            <span class="q-number">Question 5</span>
+            <span class="q-of">/ 26</span>
+          </div>
+          <div class="q-text">Al realizar una cita narrativa de un autor en el texto, ¿dónde se coloca el año de publicación?</div>
+          
+          <div class="options">
+        <div class="option-wrapper">
+          <button class="option" data-label="A" data-correct="true" data-rationale="Este formato vincula directamente la autoría con la vigencia temporal de la información presentada.">
+            <span class="opt-label">A</span>
+            <span class="opt-text">Entre paréntesis inmediatamente después del nombre del autor</span>
+          </button>
+          <div class="option-feedback hidden" data-for="A">
+            <div class="feedback-status"></div>
+            <div class="feedback-rationale">Este formato vincula directamente la autoría con la vigencia temporal de la información presentada.</div>
+          </div>
+        </div>
+      
+        <div class="option-wrapper">
+          <button class="option" data-label="B" data-correct="false" data-rationale="Esa ubicación es propia de las citas parentéticas, no de las narrativas donde el autor es el sujeto.">
+            <span class="opt-label">B</span>
+            <span class="opt-text">Al final de la oración antes del punto</span>
+          </button>
+          <div class="option-feedback hidden" data-for="B">
+            <div class="feedback-status"></div>
+            <div class="feedback-rationale">Esa ubicación es propia de las citas parentéticas, no de las narrativas donde el autor es el sujeto.</div>
+          </div>
+        </div>
+      
+        <div class="option-wrapper">
+          <button class="option" data-label="C" data-correct="false" data-rationale="El orden lógico en APA prioriza al autor y el año, dejando la ubicación específica (página) para el final.">
+            <span class="opt-label">C</span>
+            <span class="opt-text">Después de la página citada</span>
+          </button>
+          <div class="option-feedback hidden" data-for="C">
+            <div class="feedback-status"></div>
+            <div class="feedback-rationale">El orden lógico en APA prioriza al autor y el año, dejando la ubicación específica (página) para el final.</div>
+          </div>
+        </div>
+      
+        <div class="option-wrapper">
+          <button class="option" data-label="D" data-correct="false" data-rationale="El año es un elemento esencial en cualquier tipo de cita para permitir la localización de la fuente en las referencias.">
+            <span class="opt-label">D</span>
+            <span class="opt-text">No se requiere el año en citas narrativas</span>
+          </button>
+          <div class="option-feedback hidden" data-for="D">
+            <div class="feedback-status"></div>
+            <div class="feedback-rationale">El año es un elemento esencial en cualquier tipo de cita para permitir la localización de la fuente en las referencias.</div>
+          </div>
+        </div>
+      </div>
+          <button class="next-btn hidden">Next Question →</button>
+        </div>
+      
+        <div class="question" data-index="5">
+          <div class="q-header">
+            <span class="q-number">Question 6</span>
+            <span class="q-of">/ 26</span>
+          </div>
+          <div class="q-text">¿Cuál es la extensión recomendada para el resumen (Abstract) de un trabajo?</div>
+          
+          <div class="options">
+        <div class="option-wrapper">
+          <button class="option" data-label="A" data-correct="true" data-rationale="Este rango permite una síntesis completa pero concisa de los objetivos, metodología y resultados del estudio.">
+            <span class="opt-label">A</span>
+            <span class="opt-text">Entre 150 y 250 palabras</span>
+          </button>
+          <div class="option-feedback hidden" data-for="A">
+            <div class="feedback-status"></div>
+            <div class="feedback-rationale">Este rango permite una síntesis completa pero concisa de los objetivos, metodología y resultados del estudio.</div>
+          </div>
+        </div>
+      
+        <div class="option-wrapper">
+          <button class="option" data-label="B" data-correct="false" data-rationale="Una cantidad tan limitada suele ser insuficiente para cubrir todos los componentes críticos del trabajo.">
+            <span class="opt-label">B</span>
+            <span class="opt-text">Menos de 100 palabras</span>
+          </button>
+          <div class="option-feedback hidden" data-for="B">
+            <div class="feedback-status"></div>
+            <div class="feedback-rationale">Una cantidad tan limitada suele ser insuficiente para cubrir todos los componentes críticos del trabajo.</div>
+          </div>
+        </div>
+      
+        <div class="option-wrapper">
+          <button class="option" data-label="C" data-correct="false" data-rationale="Un resumen tan extenso pierde su propósito de ser una visión rápida y técnica para el lector.">
+            <span class="opt-label">C</span>
+            <span class="opt-text">Entre 300 y 500 palabras</span>
+          </button>
+          <div class="option-feedback hidden" data-for="C">
+            <div class="feedback-status"></div>
+            <div class="feedback-rationale">Un resumen tan extenso pierde su propósito de ser una visión rápida y técnica para el lector.</div>
+          </div>
+        </div>
+      
+        <div class="option-wrapper">
+          <button class="option" data-label="D" data-correct="false" data-rationale="El resumen debe ser breve; ocupar una página completa suele implicar un exceso de detalles innecesarios.">
+            <span class="opt-label">D</span>
+            <span class="opt-text">Exactamente una página</span>
+          </button>
+          <div class="option-feedback hidden" data-for="D">
+            <div class="feedback-status"></div>
+            <div class="feedback-rationale">El resumen debe ser breve; ocupar una página completa suele implicar un exceso de detalles innecesarios.</div>
+          </div>
+        </div>
+      </div>
+          <button class="next-btn hidden">Next Question →</button>
+        </div>
+      
+        <div class="question" data-index="6">
+          <div class="q-header">
+            <span class="q-number">Question 7</span>
+            <span class="q-of">/ 26</span>
+          </div>
+          <div class="q-text">¿Qué medida de interlineado se debe aplicar en todo el documento, incluyendo las referencias?</div>
+          
+          <div class="options">
+        <div class="option-wrapper">
+          <button class="option" data-label="A" data-correct="true" data-rationale="El espacio doble es fundamental en APA para facilitar la lectura y permitir anotaciones o correcciones del revisor.">
+            <span class="opt-label">A</span>
+            <span class="opt-text">Doble (2.0)</span>
+          </button>
+          <div class="option-feedback hidden" data-for="A">
+            <div class="feedback-status"></div>
+            <div class="feedback-rationale">El espacio doble es fundamental en APA para facilitar la lectura y permitir anotaciones o correcciones del revisor.</div>
+          </div>
+        </div>
+      
+        <div class="option-wrapper">
+          <button class="option" data-label="B" data-correct="false" data-rationale="El interlineado sencillo hace que el texto sea demasiado denso para los estándares de presentación académica de APA.">
+            <span class="opt-label">B</span>
+            <span class="opt-text">Sencillo (1.0)</span>
+          </button>
+          <div class="option-feedback hidden" data-for="B">
+            <div class="feedback-status"></div>
+            <div class="feedback-rationale">El interlineado sencillo hace que el texto sea demasiado denso para los estándares de presentación académica de APA.</div>
+          </div>
+        </div>
+      
+        <div class="option-wrapper">
+          <button class="option" data-label="C" data-correct="false" data-rationale="Aunque es común en otros estilos, APA requiere específicamente el doble espacio para mantener la consistencia.">
+            <span class="opt-label">C</span>
+            <span class="opt-text">1.5 líneas</span>
+          </button>
+          <div class="option-feedback hidden" data-for="C">
+            <div class="feedback-status"></div>
+            <div class="feedback-rationale">Aunque es común en otros estilos, APA requiere específicamente el doble espacio para mantener la consistencia.</div>
+          </div>
+        </div>
+      
+        <div class="option-wrapper">
+          <button class="option" data-label="D" data-correct="false" data-rationale="APA busca la uniformidad, por lo que no recomienda variar el interlineado entre diferentes secciones.">
+            <span class="opt-label">D</span>
+            <span class="opt-text">Triple para títulos y doble para el cuerpo</span>
+          </button>
+          <div class="option-feedback hidden" data-for="D">
+            <div class="feedback-status"></div>
+            <div class="feedback-rationale">APA busca la uniformidad, por lo que no recomienda variar el interlineado entre diferentes secciones.</div>
+          </div>
+        </div>
+      </div>
+          <button class="next-btn hidden">Next Question →</button>
+        </div>
+      
+        <div class="question" data-index="7">
+          <div class="q-header">
+            <span class="q-number">Question 8</span>
+            <span class="q-of">/ 26</span>
+          </div>
+          <div class="q-text">¿Cómo se define una 'cita larga' en el formato APA 7?</div>
+          
+          <div class="options">
+        <div class="option-wrapper">
+          <button class="option" data-label="A" data-correct="true" data-rationale="Al alcanzar este umbral, el texto debe separarse del párrafo principal para destacar visualmente su extensión.">
+            <span class="opt-label">A</span>
+            <span class="opt-text">Una cita que tiene 40 palabras o más</span>
+          </button>
+          <div class="option-feedback hidden" data-for="A">
+            <div class="feedback-status"></div>
+            <div class="feedback-rationale">Al alcanzar este umbral, el texto debe separarse del párrafo principal para destacar visualmente su extensión.</div>
+          </div>
+        </div>
+      
+        <div class="option-wrapper">
+          <button class="option" data-label="B" data-correct="false" data-rationale="APA utiliza el conteo de palabras en lugar de líneas, ya que las líneas dependen del tamaño de la fuente y márgenes.">
+            <span class="opt-label">B</span>
+            <span class="opt-text">Una cita de más de tres líneas</span>
+          </button>
+          <div class="option-feedback hidden" data-for="B">
+            <div class="feedback-status"></div>
+            <div class="feedback-rationale">APA utiliza el conteo de palabras en lugar de líneas, ya que las líneas dependen del tamaño de la fuente y márgenes.</div>
+          </div>
+        </div>
+      
+        <div class="option-wrapper">
+          <button class="option" data-label="C" data-correct="false" data-rationale="Este límite es demasiado alto; el formato de bloque se aplica mucho antes para mantener la legibilidad.">
+            <span class="opt-label">C</span>
+            <span class="opt-text">Una cita de más de 100 palabras</span>
+          </button>
+          <div class="option-feedback hidden" data-for="C">
+            <div class="feedback-status"></div>
+            <div class="feedback-rationale">Este límite es demasiado alto; el formato de bloque se aplica mucho antes para mantener la legibilidad.</div>
+          </div>
+        </div>
+      
+        <div class="option-wrapper">
+          <button class="option" data-label="D" data-correct="false" data-rationale="La definición se basa estrictamente en el número de palabras extraídas directamente de la fuente original.">
+            <span class="opt-label">D</span>
+            <span class="opt-text">Cualquier cita que ocupe un párrafo completo</span>
+          </button>
+          <div class="option-feedback hidden" data-for="D">
+            <div class="feedback-status"></div>
+            <div class="feedback-rationale">La definición se basa estrictamente en el número de palabras extraídas directamente de la fuente original.</div>
+          </div>
+        </div>
+      </div>
+          <button class="next-btn hidden">Next Question →</button>
+        </div>
+      
+        <div class="question" data-index="8">
+          <div class="q-header">
+            <span class="q-number">Question 9</span>
+            <span class="q-of">/ 26</span>
+          </div>
+          <div class="q-text">¿Qué característica de formato distingue a una cita de bloque (larga) de una cita corta?</div>
+          
+          <div class="options">
+        <div class="option-wrapper">
+          <button class="option" data-label="A" data-correct="true" data-rationale="La sangría izquierda completa reemplaza la necesidad de comillas para indicar que es una transcripción directa.">
+            <span class="opt-label">A</span>
+            <span class="opt-text">No utiliza comillas y tiene una sangría de 1.27 cm en todo el bloque</span>
+          </button>
+          <div class="option-feedback hidden" data-for="A">
+            <div class="feedback-status"></div>
+            <div class="feedback-rationale">La sangría izquierda completa reemplaza la necesidad de comillas para indicar que es una transcripción directa.</div>
+          </div>
+        </div>
+      
+        <div class="option-wrapper">
+          <button class="option" data-label="B" data-correct="false" data-rationale="APA prohíbe el uso de cursivas para citas textuales a menos que el original las contenga.">
+            <span class="opt-label">B</span>
+            <span class="opt-text">Utiliza comillas dobles y letra cursiva</span>
+          </button>
+          <div class="option-feedback hidden" data-for="B">
+            <div class="feedback-status"></div>
+            <div class="feedback-rationale">APA prohíbe el uso de cursivas para citas textuales a menos que el original las contenga.</div>
+          </div>
+        </div>
+      
+        <div class="option-wrapper">
+          <button class="option" data-label="C" data-correct="false" data-rationale="El tamaño de fuente debe ser consistente en todo el documento, independientemente de la longitud de la cita.">
+            <span class="opt-label">C</span>
+            <span class="opt-text">Se escribe con un tamaño de letra más pequeño</span>
+          </button>
+          <div class="option-feedback hidden" data-for="C">
+            <div class="feedback-status"></div>
+            <div class="feedback-rationale">El tamaño de fuente debe ser consistente en todo el documento, independientemente de la longitud de la cita.</div>
+          </div>
+        </div>
+      
+        <div class="option-wrapper">
+          <button class="option" data-label="D" data-correct="false" data-rationale="La cita de bloque mantiene la alineación a la izquierda, pero con un margen adicional de sangría.">
+            <span class="opt-label">D</span>
+            <span class="opt-text">Se centra en la página</span>
+          </button>
+          <div class="option-feedback hidden" data-for="D">
+            <div class="feedback-status"></div>
+            <div class="feedback-rationale">La cita de bloque mantiene la alineación a la izquierda, pero con un margen adicional de sangría.</div>
+          </div>
+        </div>
+      </div>
+          <button class="next-btn hidden">Next Question →</button>
+        </div>
+      
+        <div class="question" data-index="9">
+          <div class="q-header">
+            <span class="q-number">Question 10</span>
+            <span class="q-of">/ 26</span>
+          </div>
+          <div class="q-text">¿Cuál es el orden correcto de los elementos en una referencia de libro?</div>
+          
+          <div class="options">
+        <div class="option-wrapper">
+          <button class="option" data-label="A" data-correct="true" data-rationale="Este orden lógico permite identificar primero quién, cuándo, qué y finalmente quién publicó la obra.">
+            <span class="opt-label">A</span>
+            <span class="opt-text">Autor. (Año). Título del libro. Editorial.</span>
+          </button>
+          <div class="option-feedback hidden" data-for="A">
+            <div class="feedback-status"></div>
+            <div class="feedback-rationale">Este orden lógico permite identificar primero quién, cuándo, qué y finalmente quién publicó la obra.</div>
+          </div>
+        </div>
+      
+        <div class="option-wrapper">
+          <button class="option" data-label="B" data-correct="false" data-rationale="En APA, la autoría siempre es el elemento primordial para organizar la lista alfabéticamente.">
+            <span class="opt-label">B</span>
+            <span class="opt-text">Título del libro. (Año). Autor. Editorial.</span>
+          </button>
+          <div class="option-feedback hidden" data-for="B">
+            <div class="feedback-status"></div>
+            <div class="feedback-rationale">En APA, la autoría siempre es el elemento primordial para organizar la lista alfabéticamente.</div>
+          </div>
+        </div>
+      
+        <div class="option-wrapper">
+          <button class="option" data-label="C" data-correct="false" data-rationale="La inclusión del lugar de publicación (ciudad/país) fue eliminada en la 7ª edición.">
+            <span class="opt-label">C</span>
+            <span class="opt-text">Autor. Título del libro. Lugar de publicación: Editorial.</span>
+          </button>
+          <div class="option-feedback hidden" data-for="C">
+            <div class="feedback-status"></div>
+            <div class="feedback-rationale">La inclusión del lugar de publicación (ciudad/país) fue eliminada en la 7ª edición.</div>
+          </div>
+        </div>
+      
+        <div class="option-wrapper">
+          <button class="option" data-label="D" data-correct="false" data-rationale="La URL solo se incluye si el libro es digital y no tiene DOI; para libros impresos, la editorial es el dato final.">
+            <span class="opt-label">D</span>
+            <span class="opt-text">Autor. (Año). Título del libro. URL.</span>
+          </button>
+          <div class="option-feedback hidden" data-for="D">
+            <div class="feedback-status"></div>
+            <div class="feedback-rationale">La URL solo se incluye si el libro es digital y no tiene DOI; para libros impresos, la editorial es el dato final.</div>
+          </div>
+        </div>
+      </div>
+          <button class="next-btn hidden">Next Question →</button>
+        </div>
+      
+        <div class="question" data-index="10">
+          <div class="q-header">
+            <span class="q-number">Question 11</span>
+            <span class="q-of">/ 26</span>
+          </div>
+          <div class="q-text">¿Qué tipo de sangría se aplica a la lista de referencias?</div>
+          
+          <div class="options">
+        <div class="option-wrapper">
+          <button class="option" data-label="A" data-correct="true" data-rationale="Este formato destaca el apellido del autor al inicio de la línea, facilitando la búsqueda alfabética rápida.">
+            <span class="opt-label">A</span>
+            <span class="opt-text">Sangría francesa (hanging indent)</span>
+          </button>
+          <div class="option-feedback hidden" data-for="A">
+            <div class="feedback-status"></div>
+            <div class="feedback-rationale">Este formato destaca el apellido del autor al inicio de la línea, facilitando la búsqueda alfabética rápida.</div>
+          </div>
+        </div>
+      
+        <div class="option-wrapper">
+          <button class="option" data-label="B" data-correct="false" data-rationale="Esta sangría se usa en los párrafos del cuerpo del texto, pero es contraproducente en una lista de referencias.">
+            <span class="opt-label">B</span>
+            <span class="opt-text">Sangría de primera línea</span>
+          </button>
+          <div class="option-feedback hidden" data-for="B">
+            <div class="feedback-status"></div>
+            <div class="feedback-rationale">Esta sangría se usa en los párrafos del cuerpo del texto, pero es contraproducente en una lista de referencias.</div>
+          </div>
+        </div>
+      
+        <div class="option-wrapper">
+          <button class="option" data-label="C" data-correct="false" data-rationale="Sin sangría, los datos de las referencias se mezclarían visualmente, haciendo difícil distinguir dónde termina una y empieza otra.">
+            <span class="opt-label">C</span>
+            <span class="opt-text">Sin sangría (alineación plana)</span>
+          </button>
+          <div class="option-feedback hidden" data-for="C">
+            <div class="feedback-status"></div>
+            <div class="feedback-rationale">Sin sangría, los datos de las referencias se mezclarían visualmente, haciendo difícil distinguir dónde termina una y empieza otra.</div>
+          </div>
+        </div>
+      
+        <div class="option-wrapper">
+          <button class="option" data-label="D" data-correct="false" data-rationale="El margen derecho debe ser irregular; aplicar sangría allí no cumple ninguna función de organización.">
+            <span class="opt-label">D</span>
+            <span class="opt-text">Sangría derecha</span>
+          </button>
+          <div class="option-feedback hidden" data-for="D">
+            <div class="feedback-status"></div>
+            <div class="feedback-rationale">El margen derecho debe ser irregular; aplicar sangría allí no cumple ninguna función de organización.</div>
+          </div>
+        </div>
+      </div>
+          <button class="next-btn hidden">Next Question →</button>
+        </div>
+      
+        <div class="question" data-index="11">
+          <div class="q-header">
+            <span class="q-number">Question 12</span>
+            <span class="q-of">/ 26</span>
+          </div>
+          <div class="q-text">¿Cuál es la recomendación de APA 7 respecto al uso del DOI en fuentes digitales?</div>
+          
+          <div class="options">
+        <div class="option-wrapper">
+          <button class="option" data-label="A" data-correct="true" data-rationale="Esto facilita el acceso directo a la fuente para el lector en documentos digitales.">
+            <span class="opt-label">A</span>
+            <span class="opt-text">Presentarlo como un hipervínculo activo (https://doi.org/...)</span>
+          </button>
+          <div class="option-feedback hidden" data-for="A">
+            <div class="feedback-status"></div>
+            <div class="feedback-rationale">Esto facilita el acceso directo a la fuente para el lector en documentos digitales.</div>
+          </div>
+        </div>
+      
+        <div class="option-wrapper">
+          <button class="option" data-label="B" data-correct="false" data-rationale="Ese formato pertenece a la 6ª edición; la versión actual prefiere el formato de URL completa.">
+            <span class="opt-label">B</span>
+            <span class="opt-text">Escribir la etiqueta 'DOI:' seguida del número</span>
+          </button>
+          <div class="option-feedback hidden" data-for="B">
+            <div class="feedback-status"></div>
+            <div class="feedback-rationale">Ese formato pertenece a la 6ª edición; la versión actual prefiere el formato de URL completa.</div>
+          </div>
+        </div>
+      
+        <div class="option-wrapper">
+          <button class="option" data-label="C" data-correct="false" data-rationale="El DOI es preferible sobre la URL porque es un identificador permanente que no cambia con el tiempo.">
+            <span class="opt-label">C</span>
+            <span class="opt-text">Omitir el DOI si ya se tiene la URL de la revista</span>
+          </button>
+          <div class="option-feedback hidden" data-for="C">
+            <div class="feedback-status"></div>
+            <div class="feedback-rationale">El DOI es preferible sobre la URL porque es un identificador permanente que no cambia con el tiempo.</div>
+          </div>
+        </div>
+      
+        <div class="option-wrapper">
+          <button class="option" data-label="D" data-correct="false" data-rationale="El DOI debe ser el elemento final de la referencia y estar visible como un enlace funcional.">
+            <span class="opt-label">D</span>
+            <span class="opt-text">Colocarlo entre paréntesis al final</span>
+          </button>
+          <div class="option-feedback hidden" data-for="D">
+            <div class="feedback-status"></div>
+            <div class="feedback-rationale">El DOI debe ser el elemento final de la referencia y estar visible como un enlace funcional.</div>
+          </div>
+        </div>
+      </div>
+          <button class="next-btn hidden">Next Question →</button>
+        </div>
+      
+        <div class="question" data-index="12">
+          <div class="q-header">
+            <span class="q-number">Question 13</span>
+            <span class="q-of">/ 26</span>
+          </div>
+          <div class="q-text">¿Cuándo es obligatorio incluir la fecha de recuperación en una referencia de sitio web?</div>
+          
+          <div class="options">
+        <div class="option-wrapper">
+          <button class="option" data-label="A" data-correct="true" data-rationale="La fecha de consulta protege al autor si la información citada es modificada o eliminada posteriormente.">
+            <span class="opt-label">A</span>
+            <span class="opt-text">Solo cuando el contenido es propenso a cambiar con frecuencia (ej. wikis)</span>
+          </button>
+          <div class="option-feedback hidden" data-for="A">
+            <div class="feedback-status"></div>
+            <div class="feedback-rationale">La fecha de consulta protege al autor si la información citada es modificada o eliminada posteriormente.</div>
+          </div>
+        </div>
+      
+        <div class="option-wrapper">
+          <button class="option" data-label="B" data-correct="false" data-rationale="Para fuentes con fecha de publicación fija o estable, la fecha de recuperación se considera información redundante.">
+            <span class="opt-label">B</span>
+            <span class="opt-text">En todas las referencias de páginas web sin excepción</span>
+          </button>
+          <div class="option-feedback hidden" data-for="B">
+            <div class="feedback-status"></div>
+            <div class="feedback-rationale">Para fuentes con fecha de publicación fija o estable, la fecha de recuperación se considera información redundante.</div>
+          </div>
+        </div>
+      
+        <div class="option-wrapper">
+          <button class="option" data-label="C" data-correct="false" data-rationale="La falta de autor requiere otras medidas (como usar el título), no está relacionada con la estabilidad del contenido.">
+            <span class="opt-label">C</span>
+            <span class="opt-text">Solo si no se encuentra el nombre del autor</span>
+          </button>
+          <div class="option-feedback hidden" data-for="C">
+            <div class="feedback-status"></div>
+            <div class="feedback-rationale">La falta de autor requiere otras medidas (como usar el título), no está relacionada con la estabilidad del contenido.</div>
+          </div>
+        </div>
+      
+        <div class="option-wrapper">
+          <button class="option" data-label="D" data-correct="false" data-rationale="Se mantiene como una excepción necesaria para recursos dinámicos o redes sociales.">
+            <span class="opt-label">D</span>
+            <span class="opt-text">Nunca se debe incluir en la 7ª edición</span>
+          </button>
+          <div class="option-feedback hidden" data-for="D">
+            <div class="feedback-status"></div>
+            <div class="feedback-rationale">Se mantiene como una excepción necesaria para recursos dinámicos o redes sociales.</div>
+          </div>
+        </div>
+      </div>
+          <button class="next-btn hidden">Next Question →</button>
+        </div>
+      
+        <div class="question" data-index="13">
+          <div class="q-header">
+            <span class="q-number">Question 14</span>
+            <span class="q-of">/ 26</span>
+          </div>
+          <div class="q-text">¿Dónde debe ubicarse el título de una tabla en un documento APA 7?</div>
+          
+          <div class="options">
+        <div class="option-wrapper">
+          <button class="option" data-label="A" data-correct="true" data-rationale="Esta ubicación permite al lector identificar el contenido del elemento antes de analizar los datos numéricos.">
+            <span class="opt-label">A</span>
+            <span class="opt-text">Arriba de la tabla, en cursiva</span>
+          </button>
+          <div class="option-feedback hidden" data-for="A">
+            <div class="feedback-status"></div>
+            <div class="feedback-rationale">Esta ubicación permite al lector identificar el contenido del elemento antes de analizar los datos numéricos.</div>
+          </div>
+        </div>
+      
+        <div class="option-wrapper">
+          <button class="option" data-label="B" data-correct="false" data-rationale="Esa posición suele usarse para las notas explicativas o fuentes, no para el título principal.">
+            <span class="opt-label">B</span>
+            <span class="opt-text">Debajo de la tabla, en negrita</span>
+          </button>
+          <div class="option-feedback hidden" data-for="B">
+            <div class="feedback-status"></div>
+            <div class="feedback-rationale">Esa posición suele usarse para las notas explicativas o fuentes, no para el título principal.</div>
+          </div>
+        </div>
+      
+        <div class="option-wrapper">
+          <button class="option" data-label="C" data-correct="false" data-rationale="El título debe ser un elemento de texto independiente de la estructura de filas y columnas de la tabla.">
+            <span class="opt-label">C</span>
+            <span class="opt-text">Dentro de la primera celda de la tabla</span>
+          </button>
+          <div class="option-feedback hidden" data-for="C">
+            <div class="feedback-status"></div>
+            <div class="feedback-rationale">El título debe ser un elemento de texto independiente de la estructura de filas y columnas de la tabla.</div>
+          </div>
+        </div>
+      
+        <div class="option-wrapper">
+          <button class="option" data-label="D" data-correct="false" data-rationale="Las tablas deben estar integradas en el texto (o después de las referencias) con su respectiva identificación inmediata.">
+            <span class="opt-label">D</span>
+            <span class="opt-text">En una página de apéndices al final</span>
+          </button>
+          <div class="option-feedback hidden" data-for="D">
+            <div class="feedback-status"></div>
+            <div class="feedback-rationale">Las tablas deben estar integradas en el texto (o después de las referencias) con su respectiva identificación inmediata.</div>
+          </div>
+        </div>
+      </div>
+          <button class="next-btn hidden">Next Question →</button>
+        </div>
+      
+        <div class="question" data-index="14">
+          <div class="q-header">
+            <span class="q-number">Question 15</span>
+            <span class="q-of">/ 26</span>
+          </div>
+          <div class="q-text">¿Cuál es un ejemplo correcto de lenguaje inclusivo según las recomendaciones de APA 7?</div>
+          
+          <div class="options">
+        <div class="option-wrapper">
+          <button class="option" data-label="A" data-correct="true" data-rationale="Los sustantivos colectivos evitan el masculino genérico y representan mejor a la diversidad del grupo.">
+            <span class="opt-label">A</span>
+            <span class="opt-text">Usar 'el profesorado' en lugar de 'los profesores'</span>
+          </button>
+          <div class="option-feedback hidden" data-for="A">
+            <div class="feedback-status"></div>
+            <div class="feedback-rationale">Los sustantivos colectivos evitan el masculino genérico y representan mejor a la diversidad del grupo.</div>
+          </div>
+        </div>
+      
+        <div class="option-wrapper">
+          <button class="option" data-label="B" data-correct="false" data-rationale="APA recomienda formas gramaticales existentes en el idioma que sean inclusivas, evitando símbolos no lingüísticos.">
+            <span class="opt-label">B</span>
+            <span class="opt-text">Usar la letra 'x' para neutralizar géneros (ej. lxs estudiantes)</span>
+          </button>
+          <div class="option-feedback hidden" data-for="B">
+            <div class="feedback-status"></div>
+            <div class="feedback-rationale">APA recomienda formas gramaticales existentes en el idioma que sean inclusivas, evitando símbolos no lingüísticos.</div>
+          </div>
+        </div>
+      
+        <div class="option-wrapper">
+          <button class="option" data-label="C" data-correct="false" data-rationale="APA desalienta explícitamente el uso del masculino genérico para referirse a grupos mixtos o personas en general.">
+            <span class="opt-label">C</span>
+            <span class="opt-text">Usar siempre el masculino por economía del lenguaje</span>
+          </button>
+          <div class="option-feedback hidden" data-for="C">
+            <div class="feedback-status"></div>
+            <div class="feedback-rationale">APA desalienta explícitamente el uso del masculino genérico para referirse a grupos mixtos o personas en general.</div>
+          </div>
+        </div>
+      
+        <div class="option-wrapper">
+          <button class="option" data-label="D" data-correct="false" data-rationale="El objetivo es usar un lenguaje respetuoso y preciso cuando la descripción es relevante para la investigación.">
+            <span class="opt-label">D</span>
+            <span class="opt-text">Evitar mencionar cualquier característica de las personas</span>
+          </button>
+          <div class="option-feedback hidden" data-for="D">
+            <div class="feedback-status"></div>
+            <div class="feedback-rationale">El objetivo es usar un lenguaje respetuoso y preciso cuando la descripción es relevante para la investigación.</div>
+          </div>
+        </div>
+      </div>
+          <button class="next-btn hidden">Next Question →</button>
+        </div>
+      
+        <div class="question" data-index="15">
+          <div class="q-header">
+            <span class="q-number">Question 16</span>
+            <span class="q-of">/ 26</span>
+          </div>
+          <div class="q-text">¿Qué se debe hacer si una fuente no tiene fecha de publicación?</div>
+          
+          <div class="options">
+        <div class="option-wrapper">
+          <button class="option" data-label="A" data-correct="true" data-rationale="Esta convención informa al lector que se buscó la fecha pero no estaba disponible en la fuente.">
+            <span class="opt-label">A</span>
+            <span class="opt-text">Utilizar la abreviatura 's.f.' (sin fecha)</span>
+          </button>
+          <div class="option-feedback hidden" data-for="A">
+            <div class="feedback-status"></div>
+            <div class="feedback-rationale">Esta convención informa al lector que se buscó la fecha pero no estaba disponible en la fuente.</div>
+          </div>
+        </div>
+      
+        <div class="option-wrapper">
+          <button class="option" data-label="B" data-correct="false" data-rationale="El año de consulta es distinto al de publicación; confundirlos afectaría la precisión cronológica del trabajo.">
+            <span class="opt-label">B</span>
+            <span class="opt-text">Poner el año en que se consultó la fuente</span>
+          </button>
+          <div class="option-feedback hidden" data-for="B">
+            <div class="feedback-status"></div>
+            <div class="feedback-rationale">El año de consulta es distinto al de publicación; confundirlos afectaría la precisión cronológica del trabajo.</div>
+          </div>
+        </div>
+      
+        <div class="option-wrapper">
+          <button class="option" data-label="C" data-correct="false" data-rationale="APA requiere que todos los elementos de la referencia estén presentes o tengan una indicación de su ausencia.">
+            <span class="opt-label">C</span>
+            <span class="opt-text">Dejar el espacio en blanco</span>
+          </button>
+          <div class="option-feedback hidden" data-for="C">
+            <div class="feedback-status"></div>
+            <div class="feedback-rationale">APA requiere que todos los elementos de la referencia estén presentes o tengan una indicación de su ausencia.</div>
+          </div>
+        </div>
+      
+        <div class="option-wrapper">
+          <button class="option" data-label="D" data-correct="false" data-rationale="La integridad académica prohíbe la creación de datos que no están respaldados por la fuente original.">
+            <span class="opt-label">D</span>
+            <span class="opt-text">Inventar una fecha aproximada basada en el contenido</span>
+          </button>
+          <div class="option-feedback hidden" data-for="D">
+            <div class="feedback-status"></div>
+            <div class="feedback-rationale">La integridad académica prohíbe la creación de datos que no están respaldados por la fuente original.</div>
+          </div>
+        </div>
+      </div>
+          <button class="next-btn hidden">Next Question →</button>
+        </div>
+      
+        <div class="question" data-index="16">
+          <div class="q-header">
+            <span class="q-number">Question 17</span>
+            <span class="q-of">/ 26</span>
+          </div>
+          <div class="q-text">¿Cuál es la función principal de la 'Nota' que se coloca debajo de tablas y figuras?</div>
+          
+          <div class="options">
+        <div class="option-wrapper">
+          <button class="option" data-label="A" data-correct="true" data-rationale="La nota proporciona el contexto necesario para que el elemento visual se entienda de forma independiente al texto.">
+            <span class="opt-label">A</span>
+            <span class="opt-text">Explicar abreviaturas, símbolos o dar crédito de autoría</span>
+          </button>
+          <div class="option-feedback hidden" data-for="A">
+            <div class="feedback-status"></div>
+            <div class="feedback-rationale">La nota proporciona el contexto necesario para que el elemento visual se entienda de forma independiente al texto.</div>
+          </div>
+        </div>
+      
+        <div class="option-wrapper">
+          <button class="option" data-label="B" data-correct="false" data-rationale="El título debe ser descriptivo por sí mismo; la nota es para detalles técnicos o aclaraciones adicionales.">
+            <span class="opt-label">B</span>
+            <span class="opt-text">Repetir el título de la tabla de forma más detallada</span>
+          </button>
+          <div class="option-feedback hidden" data-for="B">
+            <div class="feedback-status"></div>
+            <div class="feedback-rationale">El título debe ser descriptivo por sí mismo; la nota es para detalles técnicos o aclaraciones adicionales.</div>
+          </div>
+        </div>
+      
+        <div class="option-wrapper">
+          <button class="option" data-label="C" data-correct="false" data-rationale="Esa información es innecesaria ya que las tablas suelen colocarse cerca de su mención textual.">
+            <span class="opt-label">C</span>
+            <span class="opt-text">Indicar en qué página del cuerpo se mencionó la tabla</span>
+          </button>
+          <div class="option-feedback hidden" data-for="C">
+            <div class="feedback-status"></div>
+            <div class="feedback-rationale">Esa información es innecesaria ya que las tablas suelen colocarse cerca de su mención textual.</div>
+          </div>
+        </div>
+      
+        <div class="option-wrapper">
+          <button class="option" data-label="D" data-correct="false" data-rationale="Si se citan fuentes, se hace dentro de la tabla o en la nota, pero no se hace una lista bibliográfica completa allí.">
+            <span class="opt-label">D</span>
+            <span class="opt-text">Listar todas las referencias citadas en la tabla</span>
+          </button>
+          <div class="option-feedback hidden" data-for="D">
+            <div class="feedback-status"></div>
+            <div class="feedback-rationale">Si se citan fuentes, se hace dentro de la tabla o en la nota, pero no se hace una lista bibliográfica completa allí.</div>
+          </div>
+        </div>
+      </div>
+          <button class="next-btn hidden">Next Question →</button>
+        </div>
+      
+        <div class="question" data-index="17">
+          <div class="q-header">
+            <span class="q-number">Question 18</span>
+            <span class="q-of">/ 26</span>
+          </div>
+          <div class="q-text">¿Qué elemento ha sido eliminado en las referencias de libros para la 7ª edición?</div>
+          
+          <div class="options">
+        <div class="option-wrapper">
+          <button class="option" data-label="A" data-correct="true" data-rationale="En la era digital, la ubicación geográfica de la editorial es menos relevante que la facilidad para encontrar la obra en línea.">
+            <span class="opt-label">A</span>
+            <span class="opt-text">El lugar de publicación</span>
+          </button>
+          <div class="option-feedback hidden" data-for="A">
+            <div class="feedback-status"></div>
+            <div class="feedback-rationale">En la era digital, la ubicación geográfica de la editorial es menos relevante que la facilidad para encontrar la obra en línea.</div>
+          </div>
+        </div>
+      
+        <div class="option-wrapper">
+          <button class="option" data-label="B" data-correct="false" data-rationale="La editorial sigue siendo un dato crucial para verificar la procedencia y calidad académica de un libro.">
+            <span class="opt-label">B</span>
+            <span class="opt-text">El nombre de la editorial</span>
+          </button>
+          <div class="option-feedback hidden" data-for="B">
+            <div class="feedback-status"></div>
+            <div class="feedback-rationale">La editorial sigue siendo un dato crucial para verificar la procedencia y calidad académica de un libro.</div>
+          </div>
+        </div>
+      
+        <div class="option-wrapper">
+          <button class="option" data-label="C" data-correct="false" data-rationale="La fecha es vital en APA para contextualizar los hallazgos de la investigación en el tiempo.">
+            <span class="opt-label">C</span>
+            <span class="opt-text">El año de publicación</span>
+          </button>
+          <div class="option-feedback hidden" data-for="C">
+            <div class="feedback-status"></div>
+            <div class="feedback-rationale">La fecha es vital en APA para contextualizar los hallazgos de la investigación en el tiempo.</div>
+          </div>
+        </div>
+      
+        <div class="option-wrapper">
+          <button class="option" data-label="D" data-correct="false" data-rationale="El autor es el primer criterio de búsqueda y organización en cualquier estilo de citación académica.">
+            <span class="opt-label">D</span>
+            <span class="opt-text">El apellido del autor</span>
+          </button>
+          <div class="option-feedback hidden" data-for="D">
+            <div class="feedback-status"></div>
+            <div class="feedback-rationale">El autor es el primer criterio de búsqueda y organización en cualquier estilo de citación académica.</div>
+          </div>
+        </div>
+      </div>
+          <button class="next-btn hidden">Next Question →</button>
+        </div>
+      
+        <div class="question" data-index="18">
+          <div class="q-header">
+            <span class="q-number">Question 19</span>
+            <span class="q-of">/ 26</span>
+          </div>
+          <div class="q-text">¿Cómo se debe referenciar una figura en el texto antes de que aparezca?</div>
+          
+          <div class="options">
+        <div class="option-wrapper">
+          <button class="option" data-label="A" data-correct="true" data-rationale="Llamar a la figura por su número permite una navegación clara, especialmente si el diseño del documento mueve la figura a otra página.">
+            <span class="opt-label">A</span>
+            <span class="opt-text">Mencionándola por su número (ej. 'como se ve en la Figura 1')</span>
+          </button>
+          <div class="option-feedback hidden" data-for="A">
+            <div class="feedback-status"></div>
+            <div class="feedback-rationale">Llamar a la figura por su número permite una navegación clara, especialmente si el diseño del documento mueve la figura a otra página.</div>
+          </div>
+        </div>
+      
+        <div class="option-wrapper">
+          <button class="option" data-label="B" data-correct="false" data-rationale="Esta indicación es imprecisa, ya que la posición física puede variar durante la edición o impresión.">
+            <span class="opt-label">B</span>
+            <span class="opt-text">Escribiendo 'ver figura abajo'</span>
+          </button>
+          <div class="option-feedback hidden" data-for="B">
+            <div class="feedback-status"></div>
+            <div class="feedback-rationale">Esta indicación es imprecisa, ya que la posición física puede variar durante la edición o impresión.</div>
+          </div>
+        </div>
+      
+        <div class="option-wrapper">
+          <button class="option" data-label="C" data-correct="false" data-rationale="Resulta redundante y rompe la fluidez de la lectura del cuerpo del trabajo.">
+            <span class="opt-label">C</span>
+            <span class="opt-text">Poniendo el título completo de la figura en el párrafo</span>
+          </button>
+          <div class="option-feedback hidden" data-for="C">
+            <div class="feedback-status"></div>
+            <div class="feedback-rationale">Resulta redundante y rompe la fluidez de la lectura del cuerpo del trabajo.</div>
+          </div>
+        </div>
+      
+        <div class="option-wrapper">
+          <button class="option" data-label="D" data-correct="false" data-rationale="APA exige que todos los elementos visuales sean introducidos y explicados brevemente en la narrativa.">
+            <span class="opt-label">D</span>
+            <span class="opt-text">No es necesario mencionarla si está en la misma página</span>
+          </button>
+          <div class="option-feedback hidden" data-for="D">
+            <div class="feedback-status"></div>
+            <div class="feedback-rationale">APA exige que todos los elementos visuales sean introducidos y explicados brevemente en la narrativa.</div>
+          </div>
+        </div>
+      </div>
+          <button class="next-btn hidden">Next Question →</button>
+        </div>
+      
+        <div class="question" data-index="19">
+          <div class="q-header">
+            <span class="q-number">Question 20</span>
+            <span class="q-of">/ 26</span>
+          </div>
+          <div class="q-text">En APA 7, ¿qué se recomienda respecto al espaciado entre párrafos?</div>
+          
+          <div class="options">
+        <div class="option-wrapper">
+          <button class="option" data-label="A" data-correct="true" data-rationale="El interlineado doble ya proporciona suficiente separación visual, por lo que el espacio extra es redundante.">
+            <span class="opt-label">A</span>
+            <span class="opt-text">No agregar espacio extra entre párrafos</span>
+          </button>
+          <div class="option-feedback hidden" data-for="A">
+            <div class="feedback-status"></div>
+            <div class="feedback-rationale">El interlineado doble ya proporciona suficiente separación visual, por lo que el espacio extra es redundante.</div>
+          </div>
+        </div>
+      
+        <div class="option-wrapper">
+          <button class="option" data-label="B" data-correct="false" data-rationale="Esto crearía huecos demasiado grandes en el documento, desperdiciando espacio innecesariamente.">
+            <span class="opt-label">B</span>
+            <span class="opt-text">Agregar un espacio doble adicional</span>
+          </button>
+          <div class="option-feedback hidden" data-for="B">
+            <div class="feedback-status"></div>
+            <div class="feedback-rationale">Esto crearía huecos demasiado grandes en el documento, desperdiciando espacio innecesariamente.</div>
+          </div>
+        </div>
+      
+        <div class="option-wrapper">
+          <button class="option" data-label="C" data-correct="false" data-rationale="Aunque es común en diseño gráfico, APA prefiere la uniformidad absoluta del interlineado 2.0.">
+            <span class="opt-label">C</span>
+            <span class="opt-text">Usar un espaciado de 6 puntos después de cada párrafo</span>
+          </button>
+          <div class="option-feedback hidden" data-for="C">
+            <div class="feedback-status"></div>
+            <div class="feedback-rationale">Aunque es común en diseño gráfico, APA prefiere la uniformidad absoluta del interlineado 2.0.</div>
+          </div>
+        </div>
+      
+        <div class="option-wrapper">
+          <button class="option" data-label="D" data-correct="false" data-rationale="Incluso las citas de bloque mantienen el interlineado doble sin espacios adicionales antes o después.">
+            <span class="opt-label">D</span>
+            <span class="opt-text">Solo agregar espacio si el párrafo es una cita larga</span>
+          </button>
+          <div class="option-feedback hidden" data-for="D">
+            <div class="feedback-status"></div>
+            <div class="feedback-rationale">Incluso las citas de bloque mantienen el interlineado doble sin espacios adicionales antes o después.</div>
+          </div>
+        </div>
+      </div>
+          <button class="next-btn hidden">Next Question →</button>
+        </div>
+      
+        <div class="question" data-index="20">
+          <div class="q-header">
+            <span class="q-number">Question 21</span>
+            <span class="q-of">/ 26</span>
+          </div>
+          <div class="q-text">¿Cuál es el propósito de incluir palabras clave (keywords) después del resumen?</div>
+          
+          <div class="options">
+        <div class="option-wrapper">
+          <button class="option" data-label="A" data-correct="true" data-rationale="Las palabras clave actúan como etiquetas de indexación que ayudan a otros investigadores a encontrar el estudio por tema.">
+            <span class="opt-label">A</span>
+            <span class="opt-text">Facilitar la búsqueda del trabajo en bases de datos</span>
+          </button>
+          <div class="option-feedback hidden" data-for="A">
+            <div class="feedback-status"></div>
+            <div class="feedback-rationale">Las palabras clave actúan como etiquetas de indexación que ayudan a otros investigadores a encontrar el estudio por tema.</div>
+          </div>
+        </div>
+      
+        <div class="option-wrapper">
+          <button class="option" data-label="B" data-correct="false" data-rationale="Todos los elementos en APA tienen una función técnica; el diseño visual es secundario a la utilidad académica.">
+            <span class="opt-label">B</span>
+            <span class="opt-text">Rellenar el espacio sobrante en la página del resumen</span>
+          </button>
+          <div class="option-feedback hidden" data-for="B">
+            <div class="feedback-status"></div>
+            <div class="feedback-rationale">Todos los elementos en APA tienen una función técnica; el diseño visual es secundario a la utilidad académica.</div>
+          </div>
+        </div>
+      
+        <div class="option-wrapper">
+          <button class="option" data-label="C" data-correct="false" data-rationale="Las palabras clave identifican temas generales, no son un glosario de términos específicos.">
+            <span class="opt-label">C</span>
+            <span class="opt-text">Definir términos complejos usados en el texto</span>
+          </button>
+          <div class="option-feedback hidden" data-for="C">
+            <div class="feedback-status"></div>
+            <div class="feedback-rationale">Las palabras clave identifican temas generales, no son un glosario de términos específicos.</div>
+          </div>
+        </div>
+      
+        <div class="option-wrapper">
+          <button class="option" data-label="D" data-correct="false" data-rationale="Complementan al título, proporcionando términos adicionales que podrían no aparecer en él.">
+            <span class="opt-label">D</span>
+            <span class="opt-text">Sustituir el título del trabajo en las búsquedas</span>
+          </button>
+          <div class="option-feedback hidden" data-for="D">
+            <div class="feedback-status"></div>
+            <div class="feedback-rationale">Complementan al título, proporcionando términos adicionales que podrían no aparecer en él.</div>
+          </div>
+        </div>
+      </div>
+          <button class="next-btn hidden">Next Question →</button>
+        </div>
+      
+        <div class="question" data-index="21">
+          <div class="q-header">
+            <span class="q-number">Question 22</span>
+            <span class="q-of">/ 26</span>
+          </div>
+          <div class="q-text">¿Qué información debe contener obligatoriamente la portada de un trabajo académico estudiantil?</div>
+          
+          <div class="options">
+        <div class="option-wrapper">
+          <button class="option" data-label="A" data-correct="true" data-rationale="Estos datos permiten identificar plenamente el origen del trabajo y el contexto institucional de su entrega.">
+            <span class="opt-label">A</span>
+            <span class="opt-text">Título, nombre del autor, afiliación, curso, instructor y fecha</span>
+          </button>
+          <div class="option-feedback hidden" data-for="A">
+            <div class="feedback-status"></div>
+            <div class="feedback-rationale">Estos datos permiten identificar plenamente el origen del trabajo y el contexto institucional de su entrega.</div>
+          </div>
+        </div>
+      
+        <div class="option-wrapper">
+          <button class="option" data-label="B" data-correct="false" data-rationale="APA es un estilo formal que no recomienda el uso de imágenes decorativas en la portada.">
+            <span class="opt-label">B</span>
+            <span class="opt-text">Título, autor y una imagen relacionada al tema</span>
+          </button>
+          <div class="option-feedback hidden" data-for="B">
+            <div class="feedback-status"></div>
+            <div class="feedback-rationale">APA es un estilo formal que no recomienda el uso de imágenes decorativas en la portada.</div>
+          </div>
+        </div>
+      
+        <div class="option-wrapper">
+          <button class="option" data-label="C" data-correct="false" data-rationale="La identificación del autor y la institución es requisito indispensable para la administración académica.">
+            <span class="opt-label">C</span>
+            <span class="opt-text">Solo el título en letras grandes y centradas</span>
+          </button>
+          <div class="option-feedback hidden" data-for="C">
+            <div class="feedback-status"></div>
+            <div class="feedback-rationale">La identificación del autor y la institución es requisito indispensable para la administración académica.</div>
+          </div>
+        </div>
+      
+        <div class="option-wrapper">
+          <button class="option" data-label="D" data-correct="false" data-rationale="El resumen debe ir en su propia página (la segunda), no mezclado con los datos de identificación.">
+            <span class="opt-label">D</span>
+            <span class="opt-text">Resumen ejecutivo y palabras clave</span>
+          </button>
+          <div class="option-feedback hidden" data-for="D">
+            <div class="feedback-status"></div>
+            <div class="feedback-rationale">El resumen debe ir en su propia página (la segunda), no mezclado con los datos de identificación.</div>
+          </div>
+        </div>
+      </div>
+          <button class="next-btn hidden">Next Question →</button>
+        </div>
+      
+        <div class="question" data-index="22">
+          <div class="q-header">
+            <span class="q-number">Question 23</span>
+            <span class="q-of">/ 26</span>
+          </div>
+          <div class="q-text">¿Cómo se deben organizar las fuentes en la lista de referencias?</div>
+          
+          <div class="options">
+        <div class="option-wrapper">
+          <button class="option" data-label="A" data-correct="true" data-rationale="Este sistema es el más eficiente para localizar rápidamente una fuente citada en el texto.">
+            <span class="opt-label">A</span>
+            <span class="opt-text">Alfabéticamente por el apellido del primer autor</span>
+          </button>
+          <div class="option-feedback hidden" data-for="A">
+            <div class="feedback-status"></div>
+            <div class="feedback-rationale">Este sistema es el más eficiente para localizar rápidamente una fuente citada en el texto.</div>
+          </div>
+        </div>
+      
+        <div class="option-wrapper">
+          <button class="option" data-label="B" data-correct="false" data-rationale="Este método (estilo Vancouver) no es el que utiliza APA, que prefiere el sistema autor-fecha.">
+            <span class="opt-label">B</span>
+            <span class="opt-text">Por orden de aparición en el texto</span>
+          </button>
+          <div class="option-feedback hidden" data-for="B">
+            <div class="feedback-status"></div>
+            <div class="feedback-rationale">Este método (estilo Vancouver) no es el que utiliza APA, que prefiere el sistema autor-fecha.</div>
+          </div>
+        </div>
+      
+        <div class="option-wrapper">
+          <button class="option" data-label="C" data-correct="false" data-rationale="APA requiere una lista única e integrada para evitar confusiones al buscar una referencia específica.">
+            <span class="opt-label">C</span>
+            <span class="opt-text">Separadas por tipo de fuente (libros, artículos, webs)</span>
+          </button>
+          <div class="option-feedback hidden" data-for="C">
+            <div class="feedback-status"></div>
+            <div class="feedback-rationale">APA requiere una lista única e integrada para evitar confusiones al buscar una referencia específica.</div>
+          </div>
+        </div>
+      
+        <div class="option-wrapper">
+          <button class="option" data-label="D" data-correct="false" data-rationale="Aunque la fecha es importante, el nombre del autor es la clave principal de organización.">
+            <span class="opt-label">D</span>
+            <span class="opt-text">Cronológicamente, de la más antigua a la más reciente</span>
+          </button>
+          <div class="option-feedback hidden" data-for="D">
+            <div class="feedback-status"></div>
+            <div class="feedback-rationale">Aunque la fecha es importante, el nombre del autor es la clave principal de organización.</div>
+          </div>
+        </div>
+      </div>
+          <button class="next-btn hidden">Next Question →</button>
+        </div>
+      
+        <div class="question" data-index="23">
+          <div class="q-header">
+            <span class="q-number">Question 24</span>
+            <span class="q-of">/ 26</span>
+          </div>
+          <div class="q-text">¿Cuál es la recomendación de APA 7 para mejorar la accesibilidad de los documentos?</div>
+          
+          <div class="options">
+        <div class="option-wrapper">
+          <button class="option" data-label="A" data-correct="true" data-rationale="Estas prácticas permiten que los lectores de pantalla para personas con discapacidad visual procesen el documento correctamente.">
+            <span class="opt-label">A</span>
+            <span class="opt-text">Uso de encabezados jerárquicos y texto alternativo en imágenes</span>
+          </button>
+          <div class="option-feedback hidden" data-for="A">
+            <div class="feedback-status"></div>
+            <div class="feedback-rationale">Estas prácticas permiten que los lectores de pantalla para personas con discapacidad visual procesen el documento correctamente.</div>
+          </div>
+        </div>
+      
+        <div class="option-wrapper">
+          <button class="option" data-label="B" data-correct="false" data-rationale="El exceso de color puede dificultar la lectura y no es profesional en el ámbito académico.">
+            <span class="opt-label">B</span>
+            <span class="opt-text">Uso de colores llamativos para resaltar ideas importantes</span>
+          </button>
+          <div class="option-feedback hidden" data-for="B">
+            <div class="feedback-status"></div>
+            <div class="feedback-rationale">El exceso de color puede dificultar la lectura y no es profesional en el ámbito académico.</div>
+          </div>
+        </div>
+      
+        <div class="option-wrapper">
+          <button class="option" data-label="C" data-correct="false" data-rationale="Las tablas son permitidas siempre que estén correctamente formateadas y descritas para su accesibilidad.">
+            <span class="opt-label">C</span>
+            <span class="opt-text">Evitar el uso de tablas complejas</span>
+          </button>
+          <div class="option-feedback hidden" data-for="C">
+            <div class="feedback-status"></div>
+            <div class="feedback-rationale">Las tablas son permitidas siempre que estén correctamente formateadas y descritas para su accesibilidad.</div>
+          </div>
+        </div>
+      
+        <div class="option-wrapper">
+          <button class="option" data-label="D" data-correct="false" data-rationale="Las mayúsculas sostenidas son más difíciles de leer y se interpretan como gritos en la comunicación digital.">
+            <span class="opt-label">D</span>
+            <span class="opt-text">Escribir todo el texto en mayúsculas</span>
+          </button>
+          <div class="option-feedback hidden" data-for="D">
+            <div class="feedback-status"></div>
+            <div class="feedback-rationale">Las mayúsculas sostenidas son más difíciles de leer y se interpretan como gritos en la comunicación digital.</div>
+          </div>
+        </div>
+      </div>
+          <button class="next-btn hidden">Next Question →</button>
+        </div>
+      
+        <div class="question" data-index="24">
+          <div class="q-header">
+            <span class="q-number">Question 25</span>
+            <span class="q-of">/ 26</span>
+          </div>
+          <div class="q-text">En una cita parentética de dos autores, ¿qué símbolo se utiliza entre sus apellidos en la versión en español?</div>
+          
+          <div class="options">
+        <div class="option-wrapper">
+          <button class="option" data-label="A" data-correct="true" data-rationale="En español se prefiere la conjunción natural del idioma, a diferencia del inglés que usa el ampersand (&amp;).">
+            <span class="opt-label">A</span>
+            <span class="opt-text">La conjunción 'y'</span>
+          </button>
+          <div class="option-feedback hidden" data-for="A">
+            <div class="feedback-status"></div>
+            <div class="feedback-rationale">En español se prefiere la conjunción natural del idioma, a diferencia del inglés que usa el ampersand (&amp;).</div>
+          </div>
+        </div>
+      
+        <div class="option-wrapper">
+          <button class="option" data-label="B" data-correct="false" data-rationale="Este símbolo es exclusivo para trabajos escritos en inglés o cuando se sigue estrictamente la norma anglosajona.">
+            <span class="opt-label">B</span>
+            <span class="opt-text">El símbolo ampersand (&amp;)</span>
+          </button>
+          <div class="option-feedback hidden" data-for="B">
+            <div class="feedback-status"></div>
+            <div class="feedback-rationale">Este símbolo es exclusivo para trabajos escritos en inglés o cuando se sigue estrictamente la norma anglosajona.</div>
+          </div>
+        </div>
+      
+        <div class="option-wrapper">
+          <button class="option" data-label="C" data-correct="false" data-rationale="La coma se usa para separar los apellidos del año, no para unir a los dos autores entre sí.">
+            <span class="opt-label">C</span>
+            <span class="opt-text">Una coma (,)</span>
+          </button>
+          <div class="option-feedback hidden" data-for="C">
+            <div class="feedback-status"></div>
+            <div class="feedback-rationale">La coma se usa para separar los apellidos del año, no para unir a los dos autores entre sí.</div>
+          </div>
+        </div>
+      
+        <div class="option-wrapper">
+          <button class="option" data-label="D" data-correct="false" data-rationale="El guion se utiliza solo si los autores tienen un apellido compuesto que requiere ser unido por ese signo.">
+            <span class="opt-label">D</span>
+            <span class="opt-text">Un guion (-)</span>
+          </button>
+          <div class="option-feedback hidden" data-for="D">
+            <div class="feedback-status"></div>
+            <div class="feedback-rationale">El guion se utiliza solo si los autores tienen un apellido compuesto que requiere ser unido por ese signo.</div>
+          </div>
+        </div>
+      </div>
+          <button class="next-btn hidden">Next Question →</button>
+        </div>
+      
+        <div class="question" data-index="25">
+          <div class="q-header">
+            <span class="q-number">Question 26</span>
+            <span class="q-of">/ 26</span>
+          </div>
+          <div class="q-text">¿Qué sección del trabajo académico es opcional y sirve para incluir material complementario?</div>
+          
+          <div class="options">
+        <div class="option-wrapper">
+          <button class="option" data-label="A" data-correct="true" data-rationale="Permiten incluir datos brutos, cuestionarios o tablas muy extensas que distraerían al lector en el cuerpo principal.">
+            <span class="opt-label">A</span>
+            <span class="opt-text">Apéndices</span>
+          </button>
+          <div class="option-feedback hidden" data-for="A">
+            <div class="feedback-status"></div>
+            <div class="feedback-rationale">Permiten incluir datos brutos, cuestionarios o tablas muy extensas que distraerían al lector en el cuerpo principal.</div>
+          </div>
+        </div>
+      
+        <div class="option-wrapper">
+          <button class="option" data-label="B" data-correct="false" data-rationale="El resumen es una parte esencial y obligatoria para dar contexto rápido al contenido del trabajo.">
+            <span class="opt-label">B</span>
+            <span class="opt-text">Resumen</span>
+          </button>
+          <div class="option-feedback hidden" data-for="B">
+            <div class="feedback-status"></div>
+            <div class="feedback-rationale">El resumen es una parte esencial y obligatoria para dar contexto rápido al contenido del trabajo.</div>
+          </div>
+        </div>
+      
+        <div class="option-wrapper">
+          <button class="option" data-label="C" data-correct="false" data-rationale="Sin la lista de referencias, el trabajo carecería de validez científica y podría considerarse plagio.">
+            <span class="opt-label">C</span>
+            <span class="opt-text">Referencias</span>
+          </button>
+          <div class="option-feedback hidden" data-for="C">
+            <div class="feedback-status"></div>
+            <div class="feedback-rationale">Sin la lista de referencias, el trabajo carecería de validez científica y podría considerarse plagio.</div>
+          </div>
+        </div>
+      
+        <div class="option-wrapper">
+          <button class="option" data-label="D" data-correct="false" data-rationale="En trabajos de investigación, explicar cómo se obtuvieron los datos es un paso fundamental del desarrollo.">
+            <span class="opt-label">D</span>
+            <span class="opt-text">Metodología</span>
+          </button>
+          <div class="option-feedback hidden" data-for="D">
+            <div class="feedback-status"></div>
+            <div class="feedback-rationale">En trabajos de investigación, explicar cómo se obtuvieron los datos es un paso fundamental del desarrollo.</div>
+          </div>
+        </div>
+      </div>
+          <button class="next-btn hidden">Next Question →</button>
+        </div>
+      </div>
+  <div class="results" id="results">
+    <h2>Quiz Complete!</h2>
+    <div class="score" id="score">0%</div>
+    <div class="score-text" id="score-text"></div>
+    <button class="restart-btn" onclick="restart()">Try Again</button>
+  </div>
+</div>
+<script>
+const quizData = [{"question":"¿Cuál es el tamaño de fuente recomendado específicamente para la tipografía Times New Roman según la 7ª edición de APA?","hint":"","options":[{"label":"A","text":"12 pt","isCorrect":true,"rationale":"A diferencia de fuentes modernas como Calibri o Arial que usan 11 pt, Times New Roman mantiene el estándar tradicional de 12 puntos."},{"label":"B","text":"11 pt","isCorrect":false,"rationale":"Este tamaño es el estándar para fuentes sin serifa como Calibri y Arial, pero no para Times New Roman."},{"label":"C","text":"10 pt","isCorrect":false,"rationale":"Aunque se usaba en notas al pie en ediciones anteriores, la 7ª edición estandariza tamaños mayores para mejorar la legibilidad."},{"label":"D","text":"14 pt","isCorrect":false,"rationale":"Este tamaño suele reservarse para títulos grandes en otros estilos, pero APA prioriza un formato más compacto y uniforme."}]},{"question":"¿Cómo deben configurarse los márgenes de un documento bajo las normas APA 7?","hint":"","options":[{"label":"A","text":"2.54 cm en los cuatro lados","isCorrect":true,"rationale":"Esta medida equivale a exactamente una pulgada, proporcionando un marco uniforme para el texto."},{"label":"B","text":"3 cm a la izquierda y 2 cm a la derecha","isCorrect":false,"rationale":"Este formato es común en tesis para encuadernación, pero APA exige simetría absoluta de una pulgada."},{"label":"C","text":"2.54 cm solo en los márgenes superior e inferior","isCorrect":false,"rationale":"Las normas exigen que el espacio en blanco sea consistente tanto en el eje vertical como en el horizontal."},{"label":"D","text":"1.27 cm en todos los lados","isCorrect":false,"rationale":"Esta medida corresponde a la sangría de párrafo, no al espacio de los márgenes externos del documento."}]},{"question":"En la lista de referencias, ¿hasta cuántos autores se deben incluir antes de utilizar puntos suspensivos?","hint":"","options":[{"label":"A","text":"Hasta 20 autores","isCorrect":true,"rationale":"La 7ª edición amplió este límite para dar mayor crédito a los investigadores en trabajos colaborativos extensos."},{"label":"B","text":"Hasta 7 autores","isCorrect":false,"rationale":"Este era el límite establecido en la 6ª edición, el cual fue incrementado significativamente en la versión actual."},{"label":"C","text":"Hasta 10 autores","isCorrect":false,"rationale":"Aunque es un número redondo, no coincide con la actualización de 2019 que duplicó esa cantidad."},{"label":"D","text":"No hay límite de autores","isCorrect":false,"rationale":"Existe un límite definido de 20 para evitar listas excesivamente largas que dificulten la lectura del documento."}]},{"question":"¿Cuál es la alineación de texto requerida para el cuerpo de un trabajo académico en APA 7?","hint":"","options":[{"label":"A","text":"Alineado a la izquierda","isCorrect":true,"rationale":"Se prefiere el margen derecho irregular para facilitar el procesamiento visual y evitar espacios extraños entre palabras."},{"label":"B","text":"Justificado","isCorrect":false,"rationale":"Aunque parece más 'limpio', el justificado crea espacios desiguales que pueden dificultar la lectura fluida."},{"label":"C","text":"Centrado","isCorrect":false,"rationale":"Esta alineación se reserva exclusivamente para ciertos niveles de títulos o elementos de la portada."},{"label":"D","text":"Alineado a la derecha","isCorrect":false,"rationale":"Esta opción no es estándar en la escritura académica occidental y dificultaría la localización del inicio de cada línea."}]},{"question":"Al realizar una cita narrativa de un autor en el texto, ¿dónde se coloca el año de publicación?","hint":"","options":[{"label":"A","text":"Entre paréntesis inmediatamente después del nombre del autor","isCorrect":true,"rationale":"Este formato vincula directamente la autoría con la vigencia temporal de la información presentada."},{"label":"B","text":"Al final de la oración antes del punto","isCorrect":false,"rationale":"Esa ubicación es propia de las citas parentéticas, no de las narrativas donde el autor es el sujeto."},{"label":"C","text":"Después de la página citada","isCorrect":false,"rationale":"El orden lógico en APA prioriza al autor y el año, dejando la ubicación específica (página) para el final."},{"label":"D","text":"No se requiere el año en citas narrativas","isCorrect":false,"rationale":"El año es un elemento esencial en cualquier tipo de cita para permitir la localización de la fuente en las referencias."}]},{"question":"¿Cuál es la extensión recomendada para el resumen (Abstract) de un trabajo?","hint":"","options":[{"label":"A","text":"Entre 150 y 250 palabras","isCorrect":true,"rationale":"Este rango permite una síntesis completa pero concisa de los objetivos, metodología y resultados del estudio."},{"label":"B","text":"Menos de 100 palabras","isCorrect":false,"rationale":"Una cantidad tan limitada suele ser insuficiente para cubrir todos los componentes críticos del trabajo."},{"label":"C","text":"Entre 300 y 500 palabras","isCorrect":false,"rationale":"Un resumen tan extenso pierde su propósito de ser una visión rápida y técnica para el lector."},{"label":"D","text":"Exactamente una página","isCorrect":false,"rationale":"El resumen debe ser breve; ocupar una página completa suele implicar un exceso de detalles innecesarios."}]},{"question":"¿Qué medida de interlineado se debe aplicar en todo el documento, incluyendo las referencias?","hint":"","options":[{"label":"A","text":"Doble (2.0)","isCorrect":true,"rationale":"El espacio doble es fundamental en APA para facilitar la lectura y permitir anotaciones o correcciones del revisor."},{"label":"B","text":"Sencillo (1.0)","isCorrect":false,"rationale":"El interlineado sencillo hace que el texto sea demasiado denso para los estándares de presentación académica de APA."},{"label":"C","text":"1.5 líneas","isCorrect":false,"rationale":"Aunque es común en otros estilos, APA requiere específicamente el doble espacio para mantener la consistencia."},{"label":"D","text":"Triple para títulos y doble para el cuerpo","isCorrect":false,"rationale":"APA busca la uniformidad, por lo que no recomienda variar el interlineado entre diferentes secciones."}]},{"question":"¿Cómo se define una 'cita larga' en el formato APA 7?","hint":"","options":[{"label":"A","text":"Una cita que tiene 40 palabras o más","isCorrect":true,"rationale":"Al alcanzar este umbral, el texto debe separarse del párrafo principal para destacar visualmente su extensión."},{"label":"B","text":"Una cita de más de tres líneas","isCorrect":false,"rationale":"APA utiliza el conteo de palabras en lugar de líneas, ya que las líneas dependen del tamaño de la fuente y márgenes."},{"label":"C","text":"Una cita de más de 100 palabras","isCorrect":false,"rationale":"Este límite es demasiado alto; el formato de bloque se aplica mucho antes para mantener la legibilidad."},{"label":"D","text":"Cualquier cita que ocupe un párrafo completo","isCorrect":false,"rationale":"La definición se basa estrictamente en el número de palabras extraídas directamente de la fuente original."}]},{"question":"¿Qué característica de formato distingue a una cita de bloque (larga) de una cita corta?","hint":"","options":[{"label":"A","text":"No utiliza comillas y tiene una sangría de 1.27 cm en todo el bloque","isCorrect":true,"rationale":"La sangría izquierda completa reemplaza la necesidad de comillas para indicar que es una transcripción directa."},{"label":"B","text":"Utiliza comillas dobles y letra cursiva","isCorrect":false,"rationale":"APA prohíbe el uso de cursivas para citas textuales a menos que el original las contenga."},{"label":"C","text":"Se escribe con un tamaño de letra más pequeño","isCorrect":false,"rationale":"El tamaño de fuente debe ser consistente en todo el documento, independientemente de la longitud de la cita."},{"label":"D","text":"Se centra en la página","isCorrect":false,"rationale":"La cita de bloque mantiene la alineación a la izquierda, pero con un margen adicional de sangría."}]},{"question":"¿Cuál es el orden correcto de los elementos en una referencia de libro?","hint":"","options":[{"label":"A","text":"Autor. (Año). Título del libro. Editorial.","isCorrect":true,"rationale":"Este orden lógico permite identificar primero quién, cuándo, qué y finalmente quién publicó la obra."},{"label":"B","text":"Título del libro. (Año). Autor. Editorial.","isCorrect":false,"rationale":"En APA, la autoría siempre es el elemento primordial para organizar la lista alfabéticamente."},{"label":"C","text":"Autor. Título del libro. Lugar de publicación: Editorial.","isCorrect":false,"rationale":"La inclusión del lugar de publicación (ciudad/país) fue eliminada en la 7ª edición."},{"label":"D","text":"Autor. (Año). Título del libro. URL.","isCorrect":false,"rationale":"La URL solo se incluye si el libro es digital y no tiene DOI; para libros impresos, la editorial es el dato final."}]},{"question":"¿Qué tipo de sangría se aplica a la lista de referencias?","hint":"","options":[{"label":"A","text":"Sangría francesa (hanging indent)","isCorrect":true,"rationale":"Este formato destaca el apellido del autor al inicio de la línea, facilitando la búsqueda alfabética rápida."},{"label":"B","text":"Sangría de primera línea","isCorrect":false,"rationale":"Esta sangría se usa en los párrafos del cuerpo del texto, pero es contraproducente en una lista de referencias."},{"label":"C","text":"Sin sangría (alineación plana)","isCorrect":false,"rationale":"Sin sangría, los datos de las referencias se mezclarían visualmente, haciendo difícil distinguir dónde termina una y empieza otra."},{"label":"D","text":"Sangría derecha","isCorrect":false,"rationale":"El margen derecho debe ser irregular; aplicar sangría allí no cumple ninguna función de organización."}]},{"question":"¿Cuál es la recomendación de APA 7 respecto al uso del DOI en fuentes digitales?","hint":"","options":[{"label":"A","text":"Presentarlo como un hipervínculo activo (https://doi.org/...)","isCorrect":true,"rationale":"Esto facilita el acceso directo a la fuente para el lector en documentos digitales."},{"label":"B","text":"Escribir la etiqueta 'DOI:' seguida del número","isCorrect":false,"rationale":"Ese formato pertenece a la 6ª edición; la versión actual prefiere el formato de URL completa."},{"label":"C","text":"Omitir el DOI si ya se tiene la URL de la revista","isCorrect":false,"rationale":"El DOI es preferible sobre la URL porque es un identificador permanente que no cambia con el tiempo."},{"label":"D","text":"Colocarlo entre paréntesis al final","isCorrect":false,"rationale":"El DOI debe ser el elemento final de la referencia y estar visible como un enlace funcional."}]},{"question":"¿Cuándo es obligatorio incluir la fecha de recuperación en una referencia de sitio web?","hint":"","options":[{"label":"A","text":"Solo cuando el contenido es propenso a cambiar con frecuencia (ej. wikis)","isCorrect":true,"rationale":"La fecha de consulta protege al autor si la información citada es modificada o eliminada posteriormente."},{"label":"B","text":"En todas las referencias de páginas web sin excepción","isCorrect":false,"rationale":"Para fuentes con fecha de publicación fija o estable, la fecha de recuperación se considera información redundante."},{"label":"C","text":"Solo si no se encuentra el nombre del autor","isCorrect":false,"rationale":"La falta de autor requiere otras medidas (como usar el título), no está relacionada con la estabilidad del contenido."},{"label":"D","text":"Nunca se debe incluir en la 7ª edición","isCorrect":false,"rationale":"Se mantiene como una excepción necesaria para recursos dinámicos o redes sociales."}]},{"question":"¿Dónde debe ubicarse el título de una tabla en un documento APA 7?","hint":"","options":[{"label":"A","text":"Arriba de la tabla, en cursiva","isCorrect":true,"rationale":"Esta ubicación permite al lector identificar el contenido del elemento antes de analizar los datos numéricos."},{"label":"B","text":"Debajo de la tabla, en negrita","isCorrect":false,"rationale":"Esa posición suele usarse para las notas explicativas o fuentes, no para el título principal."},{"label":"C","text":"Dentro de la primera celda de la tabla","isCorrect":false,"rationale":"El título debe ser un elemento de texto independiente de la estructura de filas y columnas de la tabla."},{"label":"D","text":"En una página de apéndices al final","isCorrect":false,"rationale":"Las tablas deben estar integradas en el texto (o después de las referencias) con su respectiva identificación inmediata."}]},{"question":"¿Cuál es un ejemplo correcto de lenguaje inclusivo según las recomendaciones de APA 7?","hint":"","options":[{"label":"A","text":"Usar 'el profesorado' en lugar de 'los profesores'","isCorrect":true,"rationale":"Los sustantivos colectivos evitan el masculino genérico y representan mejor a la diversidad del grupo."},{"label":"B","text":"Usar la letra 'x' para neutralizar géneros (ej. lxs estudiantes)","isCorrect":false,"rationale":"APA recomienda formas gramaticales existentes en el idioma que sean inclusivas, evitando símbolos no lingüísticos."},{"label":"C","text":"Usar siempre el masculino por economía del lenguaje","isCorrect":false,"rationale":"APA desalienta explícitamente el uso del masculino genérico para referirse a grupos mixtos o personas en general."},{"label":"D","text":"Evitar mencionar cualquier característica de las personas","isCorrect":false,"rationale":"El objetivo es usar un lenguaje respetuoso y preciso cuando la descripción es relevante para la investigación."}]},{"question":"¿Qué se debe hacer si una fuente no tiene fecha de publicación?","hint":"","options":[{"label":"A","text":"Utilizar la abreviatura 's.f.' (sin fecha)","isCorrect":true,"rationale":"Esta convención informa al lector que se buscó la fecha pero no estaba disponible en la fuente."},{"label":"B","text":"Poner el año en que se consultó la fuente","isCorrect":false,"rationale":"El año de consulta es distinto al de publicación; confundirlos afectaría la precisión cronológica del trabajo."},{"label":"C","text":"Dejar el espacio en blanco","isCorrect":false,"rationale":"APA requiere que todos los elementos de la referencia estén presentes o tengan una indicación de su ausencia."},{"label":"D","text":"Inventar una fecha aproximada basada en el contenido","isCorrect":false,"rationale":"La integridad académica prohíbe la creación de datos que no están respaldados por la fuente original."}]},{"question":"¿Cuál es la función principal de la 'Nota' que se coloca debajo de tablas y figuras?","hint":"","options":[{"label":"A","text":"Explicar abreviaturas, símbolos o dar crédito de autoría","isCorrect":true,"rationale":"La nota proporciona el contexto necesario para que el elemento visual se entienda de forma independiente al texto."},{"label":"B","text":"Repetir el título de la tabla de forma más detallada","isCorrect":false,"rationale":"El título debe ser descriptivo por sí mismo; la nota es para detalles técnicos o aclaraciones adicionales."},{"label":"C","text":"Indicar en qué página del cuerpo se mencionó la tabla","isCorrect":false,"rationale":"Esa información es innecesaria ya que las tablas suelen colocarse cerca de su mención textual."},{"label":"D","text":"Listar todas las referencias citadas en la tabla","isCorrect":false,"rationale":"Si se citan fuentes, se hace dentro de la tabla o en la nota, pero no se hace una lista bibliográfica completa allí."}]},{"question":"¿Qué elemento ha sido eliminado en las referencias de libros para la 7ª edición?","hint":"","options":[{"label":"A","text":"El lugar de publicación","isCorrect":true,"rationale":"En la era digital, la ubicación geográfica de la editorial es menos relevante que la facilidad para encontrar la obra en línea."},{"label":"B","text":"El nombre de la editorial","isCorrect":false,"rationale":"La editorial sigue siendo un dato crucial para verificar la procedencia y calidad académica de un libro."},{"label":"C","text":"El año de publicación","isCorrect":false,"rationale":"La fecha es vital en APA para contextualizar los hallazgos de la investigación en el tiempo."},{"label":"D","text":"El apellido del autor","isCorrect":false,"rationale":"El autor es el primer criterio de búsqueda y organización en cualquier estilo de citación académica."}]},{"question":"¿Cómo se debe referenciar una figura en el texto antes de que aparezca?","hint":"","options":[{"label":"A","text":"Mencionándola por su número (ej. 'como se ve en la Figura 1')","isCorrect":true,"rationale":"Llamar a la figura por su número permite una navegación clara, especialmente si el diseño del documento mueve la figura a otra página."},{"label":"B","text":"Escribiendo 'ver figura abajo'","isCorrect":false,"rationale":"Esta indicación es imprecisa, ya que la posición física puede variar durante la edición o impresión."},{"label":"C","text":"Poniendo el título completo de la figura en el párrafo","isCorrect":false,"rationale":"Resulta redundante y rompe la fluidez de la lectura del cuerpo del trabajo."},{"label":"D","text":"No es necesario mencionarla si está en la misma página","isCorrect":false,"rationale":"APA exige que todos los elementos visuales sean introducidos y explicados brevemente en la narrativa."}]},{"question":"En APA 7, ¿qué se recomienda respecto al espaciado entre párrafos?","hint":"","options":[{"label":"A","text":"No agregar espacio extra entre párrafos","isCorrect":true,"rationale":"El interlineado doble ya proporciona suficiente separación visual, por lo que el espacio extra es redundante."},{"label":"B","text":"Agregar un espacio doble adicional","isCorrect":false,"rationale":"Esto crearía huecos demasiado grandes en el documento, desperdiciando espacio innecesariamente."},{"label":"C","text":"Usar un espaciado de 6 puntos después de cada párrafo","isCorrect":false,"rationale":"Aunque es común en diseño gráfico, APA prefiere la uniformidad absoluta del interlineado 2.0."},{"label":"D","text":"Solo agregar espacio si el párrafo es una cita larga","isCorrect":false,"rationale":"Incluso las citas de bloque mantienen el interlineado doble sin espacios adicionales antes o después."}]},{"question":"¿Cuál es el propósito de incluir palabras clave (keywords) después del resumen?","hint":"","options":[{"label":"A","text":"Facilitar la búsqueda del trabajo en bases de datos","isCorrect":true,"rationale":"Las palabras clave actúan como etiquetas de indexación que ayudan a otros investigadores a encontrar el estudio por tema."},{"label":"B","text":"Rellenar el espacio sobrante en la página del resumen","isCorrect":false,"rationale":"Todos los elementos en APA tienen una función técnica; el diseño visual es secundario a la utilidad académica."},{"label":"C","text":"Definir términos complejos usados en el texto","isCorrect":false,"rationale":"Las palabras clave identifican temas generales, no son un glosario de términos específicos."},{"label":"D","text":"Sustituir el título del trabajo en las búsquedas","isCorrect":false,"rationale":"Complementan al título, proporcionando términos adicionales que podrían no aparecer en él."}]},{"question":"¿Qué información debe contener obligatoriamente la portada de un trabajo académico estudiantil?","hint":"","options":[{"label":"A","text":"Título, nombre del autor, afiliación, curso, instructor y fecha","isCorrect":true,"rationale":"Estos datos permiten identificar plenamente el origen del trabajo y el contexto institucional de su entrega."},{"label":"B","text":"Título, autor y una imagen relacionada al tema","isCorrect":false,"rationale":"APA es un estilo formal que no recomienda el uso de imágenes decorativas en la portada."},{"label":"C","text":"Solo el título en letras grandes y centradas","isCorrect":false,"rationale":"La identificación del autor y la institución es requisito indispensable para la administración académica."},{"label":"D","text":"Resumen ejecutivo y palabras clave","isCorrect":false,"rationale":"El resumen debe ir en su propia página (la segunda), no mezclado con los datos de identificación."}]},{"question":"¿Cómo se deben organizar las fuentes en la lista de referencias?","hint":"","options":[{"label":"A","text":"Alfabéticamente por el apellido del primer autor","isCorrect":true,"rationale":"Este sistema es el más eficiente para localizar rápidamente una fuente citada en el texto."},{"label":"B","text":"Por orden de aparición en el texto","isCorrect":false,"rationale":"Este método (estilo Vancouver) no es el que utiliza APA, que prefiere el sistema autor-fecha."},{"label":"C","text":"Separadas por tipo de fuente (libros, artículos, webs)","isCorrect":false,"rationale":"APA requiere una lista única e integrada para evitar confusiones al buscar una referencia específica."},{"label":"D","text":"Cronológicamente, de la más antigua a la más reciente","isCorrect":false,"rationale":"Aunque la fecha es importante, el nombre del autor es la clave principal de organización."}]},{"question":"¿Cuál es la recomendación de APA 7 para mejorar la accesibilidad de los documentos?","hint":"","options":[{"label":"A","text":"Uso de encabezados jerárquicos y texto alternativo en imágenes","isCorrect":true,"rationale":"Estas prácticas permiten que los lectores de pantalla para personas con discapacidad visual procesen el documento correctamente."},{"label":"B","text":"Uso de colores llamativos para resaltar ideas importantes","isCorrect":false,"rationale":"El exceso de color puede dificultar la lectura y no es profesional en el ámbito académico."},{"label":"C","text":"Evitar el uso de tablas complejas","isCorrect":false,"rationale":"Las tablas son permitidas siempre que estén correctamente formateadas y descritas para su accesibilidad."},{"label":"D","text":"Escribir todo el texto en mayúsculas","isCorrect":false,"rationale":"Las mayúsculas sostenidas son más difíciles de leer y se interpretan como gritos en la comunicación digital."}]},{"question":"En una cita parentética de dos autores, ¿qué símbolo se utiliza entre sus apellidos en la versión en español?","hint":"","options":[{"label":"A","text":"La conjunción 'y'","isCorrect":true,"rationale":"En español se prefiere la conjunción natural del idioma, a diferencia del inglés que usa el ampersand (&)."},{"label":"B","text":"El símbolo ampersand (&)","isCorrect":false,"rationale":"Este símbolo es exclusivo para trabajos escritos en inglés o cuando se sigue estrictamente la norma anglosajona."},{"label":"C","text":"Una coma (,)","isCorrect":false,"rationale":"La coma se usa para separar los apellidos del año, no para unir a los dos autores entre sí."},{"label":"D","text":"Un guion (-)","isCorrect":false,"rationale":"El guion se utiliza solo si los autores tienen un apellido compuesto que requiere ser unido por ese signo."}]},{"question":"¿Qué sección del trabajo académico es opcional y sirve para incluir material complementario?","hint":"","options":[{"label":"A","text":"Apéndices","isCorrect":true,"rationale":"Permiten incluir datos brutos, cuestionarios o tablas muy extensas que distraerían al lector en el cuerpo principal."},{"label":"B","text":"Resumen","isCorrect":false,"rationale":"El resumen es una parte esencial y obligatoria para dar contexto rápido al contenido del trabajo."},{"label":"C","text":"Referencias","isCorrect":false,"rationale":"Sin la lista de referencias, el trabajo carecería de validez científica y podría considerarse plagio."},{"label":"D","text":"Metodología","isCorrect":false,"rationale":"En trabajos de investigación, explicar cómo se obtuvieron los datos es un paso fundamental del desarrollo."}]}];
+const tr = {"correct":"Correct!","incorrect":"Incorrect","next":"Next Question →","seeResults":"See Results","complete":"Quiz Complete!","scoreText":"You got {correct} out of {total} correct","tryAgain":"Try Again","rightAnswer":"Right answer","notQuite":"Not quite"};
+let currentQ = 0, correctCount = 0, answered = false;
+
+function init() {
+  document.querySelectorAll('.question').forEach((q, i) => q.classList.toggle('active', i === 0));
+  updateProgress();
+  document.querySelectorAll('.option').forEach(opt => opt.addEventListener('click', () => selectOption(opt)));
+  document.querySelectorAll('.next-btn').forEach(btn => btn.addEventListener('click', nextQuestion));
+}
+
+function selectOption(opt) {
+  if (answered) return;
+  answered = true;
+  const q = opt.closest('.question');
+  const options = q.querySelectorAll('.option');
+  const nextBtn = q.querySelector('.next-btn');
+  const isCorrect = opt.dataset.correct === 'true';
+  
+  // Mark all options as disabled
+  options.forEach(o => o.classList.add('disabled'));
+  
+  // Style selected option
+  opt.classList.add('selected', isCorrect ? 'correct' : 'incorrect');
+  
+  // Show correct answer if wrong
+  if (!isCorrect) {
+    const correctOpt = [...options].find(o => o.dataset.correct === 'true');
+    if (correctOpt) correctOpt.classList.add('show-correct');
+  }
+  
+  if (isCorrect) correctCount++;
+  
+  // Show feedback for ALL options that have rationale
+  options.forEach(o => {
+    const wrapper = o.closest('.option-wrapper');
+    const feedback = wrapper.querySelector('.option-feedback');
+    const rationale = o.dataset.rationale;
+    const isThisCorrect = o.dataset.correct === 'true';
+    
+    if (rationale && rationale.trim()) {
+      feedback.classList.remove('hidden');
+      feedback.classList.add(isThisCorrect ? 'correct-feedback' : 'incorrect-feedback');
+      
+      const statusEl = feedback.querySelector('.feedback-status');
+      statusEl.className = 'feedback-status ' + (isThisCorrect ? 'correct' : 'incorrect');
+      statusEl.innerHTML = isThisCorrect 
+        ? '✓ ' + tr.rightAnswer
+        : '✗ ' + tr.notQuite;
+    }
+  });
+  
+  nextBtn.classList.remove('hidden');
+  if (currentQ === quizData.length - 1) nextBtn.textContent = tr.seeResults;
+}
+
+function nextQuestion() {
+  answered = false;
+  currentQ++;
+  if (currentQ >= quizData.length) { showResults(); return; }
+  document.querySelectorAll('.question').forEach((q, i) => q.classList.toggle('active', i === currentQ));
+  updateProgress();
+}
+
+function updateProgress() {
+  document.querySelector('.progress-fill').style.width = (currentQ / quizData.length * 100) + '%';
+}
+
+function showResults() {
+  document.querySelectorAll('.question').forEach(q => q.classList.remove('active'));
+  document.getElementById('results').classList.add('active');
+  const pct = Math.round((correctCount / quizData.length) * 100);
+  document.getElementById('score').textContent = pct + '%';
+  document.getElementById('score-text').textContent = tr.scoreText.replace('{correct}', correctCount).replace('{total}', quizData.length);
+  document.querySelector('.progress-fill').style.width = '100%';
+}
+
+function restart() {
+  currentQ = 0; correctCount = 0; answered = false;
+  document.getElementById('results').classList.remove('active');
+  document.querySelectorAll('.question').forEach((q, i) => {
+    q.classList.toggle('active', i === 0);
+    q.querySelectorAll('.option').forEach(o => o.classList.remove('selected', 'correct', 'incorrect', 'disabled', 'show-correct'));
+    q.querySelectorAll('.option-feedback').forEach(f => {
+      f.classList.add('hidden');
+      f.classList.remove('correct-feedback', 'incorrect-feedback');
+    });
+    const btn = q.querySelector('.next-btn');
+    btn.classList.add('hidden');
+    btn.textContent = tr.next;
+  });
+  updateProgress();
+}
+
+init();
+</script>
+</body>
+</html>
